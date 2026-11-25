@@ -1,0 +1,34 @@
+{
+  "name": "hostyourforms",
+  "version": "0.1.0",
+  "description": "Form backend for static websites that sends through your own email provider (Postmark, Amazon SES, Emailit, SMTP).",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/entry/node.ts",
+    "build": "npm run build:node && npm run build:bunny",
+    "build:node": "esbuild src/entry/node.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=dist/node.js",
+    "build:bunny": "esbuild src/entry/bunny.ts --bundle --platform=neutral --format=esm --target=es2022 --main-fields=module,main --conditions=bunny,deno,worker,import --external:node:* --minify --outfile=dist/bunny.js",
+    "start": "node dist/node.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.11",
+    "hono": "^4.13.22",
+    "nodemailer": "^10.6.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@bunny.net/edgescript-sdk": "^0.13.0",
+    "@types/node": "^26.6.10",
+    "@types/nodemailer": "^8.0.2",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
+  }
+}

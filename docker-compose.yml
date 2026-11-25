@@ -1,0 +1,10 @@
+services:
+  hostyourforms:
+    build: .
+    restart: unless-stopped
+    # Only listen locally; put nginx/Caddy/Enhance's proxy in front for HTTPS.
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    volumes:
+      - ./forms.json:/config/forms.json:ro

@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>HostYourForms</title>
+  <meta name="description" content="Formulieren voor statische websites, verstuurd via je eigen mailprovider: Postmark, Amazon SES, Emailit of SMTP.">
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ============ HERO (dark) ============ -->
+  <header class="hero" id="top">
+    <div class="nav-shell">
+      <nav class="nav" aria-label="Hoofdmenu">
+        <a class="brand" href="#top" aria-label="HostYourForms, naar boven">
+          <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7.5 12 13.5 21 7.5" fill="none" stroke="#2f8f62" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>HostYourForms</span>
+        </a>
+        <div class="nav-links">
+          <a href="#hoe">Hoe het werkt</a>
+          <a href="#functies">Functies</a>
+          <a href="#hosting">Hosting</a>
+          <a href="#hosted">Hosted</a>
+          <a href="#vragen">Vragen</a>
+        </div>
+        <a class="btn btn-dark btn-sm" href="#hosting">Installeren</a>
+      </nav>
+    </div>
+
+    <div class="hero-copy wrap">
+      <a class="badge" href="#hosting"><span class="badge-new">Nieuw</span>Ook op Bunny Edge Scripting<span aria-hidden="true">→</span></a>
+      <h1>Formulieren, zonder omweg.</h1>
+      <p class="lede">Je statische site verstuurt formulieren via je eigen Postmark, SES of Emailit. Vanaf je eigen domein, op je eigen server.</p>
+      <div class="ctas">
+        <a class="btn btn-white" href="#hosting">Installeren</a>
+        <a class="btn btn-outline" href="#hoe">Bekijk hoe het werkt</a>
+      </div>
+      <div class="proof">
+        <span>Postmark · Amazon SES · Emailit · SMTP</span>
+        <span class="proof-sep" aria-hidden="true"></span>
+        <span>Self-hosted, geen opslag</span>
+        <span class="proof-sep" aria-hidden="true"></span>
+        <span>Open source · AGPL-3.0</span>
+      </div>
+    </div>
+
+    <div class="flow" aria-hidden="true">
+      <svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <path id="f1" d="M40,70 C320,70 430,196 690,200"/>
+          <path id="f2" d="M40,150 C320,150 450,199 690,200"/>
+          <path id="f3" d="M40,250 C320,250 450,202 690,201"/>
+          <path id="f4" d="M40,330 C320,330 430,206 690,202"/>
+          <path id="out" d="M760,200 C1000,198 1200,184 1440,162"/>
+          <linearGradient id="fadeL" x1="0" x2="1"><stop offset="0" stop-color="#e9f3ed" stop-opacity="0.05"/><stop offset="1" stop-color="#e9f3ed" stop-opacity="0.35"/></linearGradient>
+        </defs>
+
+        <text class="flow-label" x="40" y="24"><tspan class="dot-red">●</tspan> Inzendingen</text>
+        <text class="flow-label" x="1400" y="24" text-anchor="end">Je inbox <tspan class="dot-white">●</tspan></text>
+
+        <g class="flow-lines">
+          <use href="#f1"/><use href="#f2"/><use href="#f3"/><use href="#f4"/>
+        </g>
+        <g class="flow-dash">
+          <use href="#f1"/><use href="#f2"/><use href="#f3"/><use href="#f4"/>
+        </g>
+        <use href="#out" class="flow-out"/>
+
+        <text class="flow-cat" x="40" y="56">Contact</text>
+        <text class="flow-cat" x="40" y="136">Offerte</text>
+        <text class="flow-cat" x="40" y="236">Vacature</text>
+        <text class="flow-cat" x="40" y="316">Bot</text>
+
+        <text class="flow-text"><textPath href="#f1" startOffset="18">naam=Sanne de Vries&amp;email=sanne@voorbeeld.nl&amp;bericht=Hoi!</textPath></text>
+        <text class="flow-text"><textPath href="#f2" startOffset="18">3 pagina's, deadline vrijdag, budget €2.500</textPath></text>
+        <text class="flow-text"><textPath href="#f3" startOffset="18">cv.pdf (182 KB) · motivatie.pdf</textPath></text>
+        <text class="flow-text flow-bot"><textPath href="#f4" startOffset="18">_gotcha=goedkope-backlinks ✗ tegengehouden</textPath></text>
+        <text class="flow-text flow-text-out"><textPath href="#out" startOffset="14">From: formulier@jouwdomein.nl ✓ Reply-To: sanne@voorbeeld.nl ✓ dkim=pass ✓ 303 → /bedankt</textPath></text>
+
+        <g transform="translate(725 128)">
+          <rect x="-104" y="-17" width="208" height="34" rx="17" class="node-pill"/>
+          <text class="node-pill-text" x="0" y="5" text-anchor="middle">✓ Verstuurd via Postmark</text>
+        </g>
+        <circle cx="725" cy="200" r="58" class="node-halo"/>
+        <circle cx="725" cy="200" r="40" class="node"/>
+        <g transform="translate(711 188)" fill="none" stroke="#0f3528" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="0" y="2" width="28" height="20" rx="4"/><path d="M1.5 5 14 13.5 26.5 5"/>
+        </g>
+      </svg>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ 00 Inbox mockup ============ -->
+    <section class="section section-white" id="inbox">
+      <div class="wrap">
+        <div class="head head-center">
+          <p class="chip"><span class="chip-n">00</span>Je inbox</p>
+          <h2>Eén nette mail voor elke inzending.</h2>
+          <p class="sub">Elk formulier komt aan zoals je het wilt: van je eigen adres, met de bezoeker als Reply-To.</p>
+        </div>
+
+        <div class="device">
+          <div class="device-screen">
+            <aside class="mc-side">
+              <div class="mc-account"><span class="mc-avatar">J</span><span>jouwdomein.nl</span><span class="mc-caret" aria-hidden="true">⌄</span></div>
+              <p class="mc-group">Mappen</p>
+              <ul class="mc-folders">
+                <li class="active"><span>Inbox</span><b>24</b></li>
+                <li><span>Formulier · contact</span><b>14</b></li>
+                <li><span>Formulier · offerte</span><b>6</b></li>
+                <li><span>Formulier · vacature</span><b>4</b></li>
+                <li><span>Verzonden</span><b></b></li>
+              </ul>
+              <div class="mc-log">
+                <p class="mc-log-title"><span class="live"></span>Server-log vandaag</p>
+                <p>24 afgeleverd<br>31 bots tegengehouden</p>
+              </div>
+            </aside>
+
+            <div class="mc-list">
+              <div class="mc-search">Zoeken in mail <kbd>⌘K</kbd></div>
+              <article class="mc-item selected">
+                <div class="mc-row"><strong>Website</strong><time>09:12</time></div>
+                <p>Nieuw bericht van Sanne de Vries</p>
+                <div class="mc-tags"><span class="tag tag-mint">contact</span><span class="tag">bijlage</span></div>
+              </article>
+              <article class="mc-item">
+                <div class="mc-row"><strong>Website</strong><time>08:47</time></div>
+                <p>Offerteaanvraag: Bakkerij Jansen</p>
+                <div class="mc-tags"><span class="tag tag-amber">offerte</span></div>
+              </article>
+              <article class="mc-item">
+                <div class="mc-row"><strong>Website</strong><time>gisteren</time></div>
+                <p>Sollicitatie: Mohamed El Idrissi</p>
+                <div class="mc-tags"><span class="tag tag-sky">vacature</span><span class="tag">2 bijlagen</span></div>
+              </article>
+              <article class="mc-item">
+                <div class="mc-row"><strong>Website</strong><time>gisteren</time></div>
+                <p>Nieuw bericht van Tom Bakker</p>
+                <div class="mc-tags"><span class="tag tag-mint">contact</span></div>
+              </article>
+            </div>
+
+            <div class="mc-read">
+              <div class="mc-read-head">
+                <h3>Nieuw bericht van Sanne de Vries</h3>
+                <dl class="mc-meta">
+                  <dt>Van</dt><dd>Website &lt;formulier@jouwdomein.nl&gt;</dd>
+                  <dt>Antwoord naar</dt><dd>sanne@voorbeeld.nl</dd>
+                </dl>
+                <div class="mc-auth"><span class="tag tag-pass">dkim=pass</span><span class="tag tag-pass">spf=pass</span><span class="tag">via Postmark</span></div>
+              </div>
+              <table class="mc-fields">
+                <tr><th>name</th><td>Sanne de Vries</td></tr>
+                <tr><th>email</th><td>sanne@voorbeeld.nl</td></tr>
+                <tr><th>message</th><td>Hoi! Hebben jullie in december nog ruimte voor een kennismakingsgesprek? De briefing zit in de bijlage.</td></tr>
+              </table>
+              <div class="mc-file"><span class="file-ico">PDF</span>briefing.pdf <span class="muted">182 KB</span></div>
+              <div class="mc-actions"><span class="btn btn-dark btn-sm">Beantwoorden</span><span class="muted mc-hint">gaat naar sanne@voorbeeld.nl</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 01 Providers ============ -->
+    <section class="section section-white section-flush-top" id="providers">
+      <div class="wrap">
+        <div class="head head-center">
+          <p class="chip"><span class="chip-n">01</span>Je stack</p>
+          <h2>Werkt met de mailprovider<br>die je al hebt.</h2>
+          <p class="sub">Postmark, Amazon SES, Emailit of SMTP. Zet je API-key in een environment variable en je bent klaar.</p>
+        </div>
+      </div>
+      <div class="marquee" aria-label="Ondersteunde diensten">
+        <div class="marquee-track" data-marquee>
+          <span class="tile tile-ghost"></span>
+          <span class="tile"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg><em>Postmark</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-alt"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/></svg><em>Amazon SES</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile"><svg viewBox="0 0 24 24"><path d="M21 3 10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg><em>Emailit</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-alt"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="7" rx="2"/><rect x="4" y="13" width="16" height="7" rx="2"/><path d="M8 7.5h.01M8 16.5h.01"/></svg><em>SMTP</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><em>Turnstile</em></span>
+          <span class="tile tile-ghost"></span>
+        </div>
+      </div>
+      <div class="marquee marquee-reverse" aria-hidden="true">
+        <div class="marquee-track" data-marquee>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-alt"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5-9 5z"/><path d="M3 9v6l9 5 9-5V9"/></svg><em>Docker</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 9v11"/></svg><em>Enhance</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><em>Bunny Edge</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-alt"><svg viewBox="0 0 24 24"><path d="M5 12h4l2-6 2 12 2-6h4"/></svg><em>Node.js</em></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile tile-ghost"></span>
+          <span class="tile"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><em>HTML-form</em></span>
+          <span class="tile tile-ghost"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 02 Waarom ============ -->
+    <section class="section section-white">
+      <div class="wrap">
+        <p class="chip"><span class="chip-n">02</span>Waarom HostYourForms</p>
+        <p class="manifesto">
+          Je hebt al een <span class="inline-ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg></span> mailprovider,
+          een <span class="inline-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span> domein met DKIM
+          en een <span class="inline-ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="7" rx="2"/><rect x="4" y="13" width="16" height="7" rx="2"/></svg></span> server.
+          Toch loopt je formulier via nog een dienst. <span class="ink">HostYourForms haalt die tussenstap weg.</span>
+        </p>
+        <div class="stats">
+          <div class="stat"><div class="stat-viz" data-viz="0"></div><p class="stat-n">0</p><p class="stat-l">extra partijen die je inzendingen zien</p></div>
+          <div class="stat"><div class="stat-viz" data-viz="1"></div><p class="stat-n">1</p><p class="stat-l">configbestand voor al je formulieren</p></div>
+          <div class="stat"><div class="stat-viz" data-viz="4"></div><p class="stat-n">4<small>providers</small></p><p class="stat-l">Postmark, SES, Emailit en SMTP</p></div>
+          <div class="stat"><div class="stat-viz" data-viz="5"></div><p class="stat-n">5<small>/10 min</small></p><p class="stat-l">standaard limiet per IP-adres</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 03 Hoe het werkt ============ -->
+    <section class="section section-tint" id="hoe">
+      <div class="wrap">
+        <div class="head head-split">
+          <div>
+            <p class="chip"><span class="chip-n">03</span>Hoe het werkt</p>
+            <h2>Volg één inzending.</h2>
+          </div>
+          <p class="side-note">Van de knop op je website tot de mail in je inbox, in minder dan een seconde.</p>
+        </div>
+
+        <div class="walk">
+          <div class="walk-steps" role="tablist" aria-label="Stappen">
+            <button class="walk-step" role="tab" aria-selected="true" aria-controls="walk-stage" data-step="0">
+              <span class="walk-n">01 / Versturen</span>
+              <span class="walk-title">Een gewone POST vanaf je site.</span>
+              <span class="walk-desc">Werkt zonder JavaScript. Met <code>fetch</code> krijg je JSON terug.</span>
+              <span class="walk-bar"><i></i></span>
+            </button>
+            <button class="walk-step" role="tab" aria-selected="false" aria-controls="walk-stage" data-step="1" tabindex="-1">
+              <span class="walk-n">02 / Controleren</span>
+              <span class="walk-title">Vijf controles. Bots haken af.</span>
+              <span class="walk-desc">Origin, honeypot, Turnstile, limiet per IP en verplichte velden.</span>
+              <span class="walk-bar"><i></i></span>
+            </button>
+            <button class="walk-step" role="tab" aria-selected="false" aria-controls="walk-stage" data-step="2" tabindex="-1">
+              <span class="walk-n">03 / Afleveren</span>
+              <span class="walk-title">Jouw provider, jouw domein.</span>
+              <span class="walk-desc">De mail gaat via je eigen API-key. De bezoeker gaat naar je bedankpagina.</span>
+              <span class="walk-bar"><i></i></span>
+            </button>
+          </div>
+
+          <div class="walk-stage" id="walk-stage" role="tabpanel">
+            <div class="stage-bg" aria-hidden="true"></div>
+            <div class="stage-card" data-card="0">
+              <p class="stage-top"><span class="stage-ico">&lt;/&gt;</span>jouwdomein.nl/contact · 09:12</p>
+<pre class="stage-code"><code><span class="c-t">&lt;form</span> <span class="c-a">action=</span><span class="c-s">"https://forms.jouwdomein.nl/f/contact"</span>
+      <span class="c-a">method=</span><span class="c-s">"POST"</span><span class="c-t">&gt;</span>
+  <span class="c-t">&lt;input</span> <span class="c-a">name=</span><span class="c-s">"name"</span> <span class="c-a">required</span><span class="c-t">&gt;</span>
+  <span class="c-t">&lt;input</span> <span class="c-a">name=</span><span class="c-s">"email"</span> <span class="c-a">type=</span><span class="c-s">"email"</span><span class="c-t">&gt;</span>
+  <span class="c-t">&lt;textarea</span> <span class="c-a">name=</span><span class="c-s">"message"</span><span class="c-t">&gt;&lt;/textarea&gt;</span>
+  <span class="c-t">&lt;button&gt;</span>Versturen<span class="c-t">&lt;/button&gt;</span>
+<span class="c-t">&lt;/form&gt;</span></code></pre>
+            </div>
+            <div class="stage-card" data-card="1" hidden>
+              <p class="stage-top"><span class="stage-ico">✓</span>POST /f/contact</p>
+              <ul class="stage-checks">
+                <li><span class="ok">✓</span>Origin <code>https://jouwdomein.nl</code></li>
+                <li><span class="ok">✓</span>Honeypot <code>_gotcha</code> leeg</li>
+                <li><span class="ok">✓</span>Turnstile geslaagd</li>
+                <li><span class="ok">✓</span>Limiet: 1 van 5 per 10 min</li>
+                <li><span class="ok">✓</span>Velden name, email, message</li>
+              </ul>
+            </div>
+            <div class="stage-card" data-card="2" hidden>
+              <p class="stage-top"><span class="stage-ico">✉</span>info@jouwdomein.nl · 09:12</p>
+              <p class="stage-mail-subject">Nieuw bericht van Sanne de Vries</p>
+              <p class="stage-mail-meta">Antwoord naar: sanne@voorbeeld.nl</p>
+              <div class="mc-auth"><span class="tag tag-pass">dkim=pass</span><span class="tag tag-pass">spf=pass</span><span class="tag">303 → /bedankt</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 04 Functies ============ -->
+    <section class="section section-white" id="functies">
+      <div class="wrap">
+        <div class="head head-split">
+          <div>
+            <p class="chip"><span class="chip-n">04</span>Functies</p>
+            <h2>Alles wat een formulier nodig heeft.</h2>
+          </div>
+          <p class="side-note">Zoveel formulieren als je wilt. Elk met eigen ontvangers en regels.</p>
+        </div>
+
+        <div class="bento">
+          <article class="feat-hero">
+            <svg class="tangle" viewBox="0 0 600 420" aria-hidden="true">
+              <path d="M-20 380 C 120 260, 60 120, 220 140 S 420 340, 520 200 S 380 20, 260 90 S 120 300, 330 330 S 640 260, 620 80"/>
+              <path d="M-40 300 C 80 200, 200 260, 280 180 S 300 40, 420 70 S 560 240, 470 320 S 260 420, 200 300 S 340 120, 640 160"/>
+              <path d="M40 440 C 100 330, 260 380, 300 260 S 200 100, 330 60 S 520 120, 500 260 S 600 400, 660 300"/>
+            </svg>
+            <span class="feat-tag">Uitgelicht</span>
+            <div class="feat-float">
+              <p class="ff-top">Inbox · 09:12</p>
+              <p class="ff-msg">Hoi! Hebben jullie in december nog ruimte voor een kennismakingsgesprek?</p>
+              <div class="ff-grid">
+                <span><em>Van</em>formulier@jouwdomein.nl</span>
+                <span><em>Antwoord naar</em>sanne@voorbeeld.nl</span>
+              </div>
+            </div>
+            <div class="feat-foot">
+              <div>
+                <h3>Direct antwoorden</h3>
+                <p>De bezoeker wordt Reply-To. Eén klik en je mailt terug.</p>
+              </div>
+              <a class="btn btn-dark btn-sm" href="#hosting">Bekijk de config</a>
+            </div>
+          </article>
+
+          <article class="feat-dark">
+            <div class="fd-top"><span>Controles</span><i></i><span>5/5</span></div>
+            <h3>Vijf controles.<br>Eén mail.</h3>
+            <p>Pas als alles klopt, gaat er iets de deur uit.</p>
+            <div class="fd-dots" aria-hidden="true"></div>
+            <div class="fd-line" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <p class="fd-foot">Origin · Honeypot · Turnstile · Limiet · Velden</p>
+          </article>
+
+          <article class="feat">
+            <div class="feat-mock">
+<pre class="mock-code"><code><span class="ln">1</span> <span class="k">fetch</span>(form.action, {
+<span class="ln">2</span>   method: <span class="s">"POST"</span>,
+<span class="ln">3</span>   body: <span class="k">new</span> FormData(form),
+<span class="ln">4</span>   headers: { Accept: <span class="s">"application/json"</span> }
+<span class="ln">5</span> })  <span class="c">// → { "ok": true }</span></code></pre>
+            </div>
+            <h3>Redirect of JSON</h3>
+            <p>Naar je bedankpagina, of blijf op de pagina.</p>
+          </article>
+
+          <article class="feat">
+            <div class="feat-mock">
+              <div class="mock-file"><span class="file-ico">PDF</span><span>cv.pdf</span><span class="tag tag-pass">240 KB</span></div>
+              <div class="mock-file"><span class="file-ico">PDF</span><span>portfolio.pdf</span><span class="tag tag-pass">1,2 MB</span></div>
+              <div class="mock-file mock-file-bad"><span class="file-ico">EXE</span><span>setup.exe</span><span class="tag tag-red">geweigerd</span></div>
+            </div>
+            <h3>Bijlagen</h3>
+            <p>Jij bepaalt aantal, grootte en types.</p>
+          </article>
+
+          <article class="feat">
+            <div class="feat-mock">
+              <div class="mock-bubble">
+                <p class="mb-sub">Bedankt voor je bericht, Sanne</p>
+                <p>We reageren zo snel mogelijk. Groet, het team</p>
+                <span>Naar sanne@voorbeeld.nl · 09:12</span>
+              </div>
+              <p class="mock-ok"><span class="ok">✓</span> Alleen met Turnstile actief</p>
+            </div>
+            <h3>Bevestigingsmail</h3>
+            <p>Een automatisch bedankje, vanaf je eigen adres.</p>
+          </article>
+        </div>
+
+        <div class="rule-row">
+          <span class="ticks" aria-hidden="true"></span>
+          <a href="#hosting" class="arrow-link">Bekijk alle opties <span class="arrow-btn" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 05 Veiligheid ============ -->
+    <section class="section section-tint" id="veilig">
+      <div class="wrap proof-grid">
+        <div>
+          <p class="chip"><span class="chip-n">05</span>Veiligheid</p>
+          <h2 class="h2-left">Je domein blijft van jou.</h2>
+          <p class="sub sub-left">Een formulier dat mailt vanaf jouw domein is een doelwit. Deze regels staan standaard aan.</p>
+          <div class="rules">
+            <div class="rule"><p class="rule-k">to: vast</p><p class="rule-v">Geen open relay. Ontvangers komen nooit uit het formulier.</p></div>
+            <div class="rule"><p class="rule-k">403</p><p class="rule-v">Alleen jouw websites mogen posten.</p></div>
+            <div class="rule"><p class="rule-k">429</p><p class="rule-v">Limiet per IP-adres, per formulier instelbaar.</p></div>
+            <div class="rule"><p class="rule-k">\r\n</p><p class="rule-v">Geen header-injectie in onderwerp of Reply-To.</p></div>
+          </div>
+        </div>
+        <div class="receipt-wrap">
+          <div class="receipt">
+            <p class="receipt-to">forms.jouwdomein.nl · logboek van vandaag</p>
+            <ul class="receipt-log">
+              <li><span class="lv lv-ok">info</span>submission delivered <em>contact</em></li>
+              <li><span class="lv">info</span>honeypot triggered, dropped</li>
+              <li><span class="lv lv-warn">info</span>rejected <em>origin_not_allowed</em></li>
+              <li><span class="lv lv-warn">info</span>rejected <em>rate_limited</em></li>
+              <li><span class="lv lv-ok">info</span>submission delivered <em>offerte</em></li>
+            </ul>
+            <div class="receipt-foot">
+              <span class="receipt-logo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7.5 12 13.5 21 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+              <div><strong>HostYourForms</strong><span>Niets opgeslagen, alleen doorgestuurd</span></div>
+              <span class="stamp">GEEN<br>OPEN RELAY</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 06 Hosting ============ -->
+    <section class="section section-white" id="hosting">
+      <div class="wrap">
+        <div class="head head-center">
+          <p class="chip"><span class="chip-n">06</span>Hosting</p>
+          <h2>Draait waar je al host.</h2>
+          <p class="sub">Je VPS met Enhance, een Docker-container of Bunny's edge.</p>
+        </div>
+
+        <div class="hub" aria-hidden="true">
+          <svg viewBox="0 0 1000 340" preserveAspectRatio="xMidYMid meet">
+            <g class="hub-lines">
+              <path d="M160 60 C 330 60, 360 170, 470 170"/>
+              <path d="M300 60 C 400 60, 400 170, 470 170"/>
+              <path d="M160 170 L 470 170"/>
+              <path d="M300 170 L 470 170"/>
+              <path d="M160 280 C 330 280, 360 170, 470 170"/>
+              <path d="M300 280 C 400 280, 400 170, 470 170"/>
+              <path d="M530 170 C 600 170, 600 60, 700 60"/>
+              <path d="M530 170 C 670 170, 670 60, 840 60"/>
+              <path d="M530 170 L 840 170"/>
+              <path d="M530 170 C 600 170, 600 280, 700 280"/>
+              <path d="M530 170 C 670 170, 670 280, 840 280"/>
+            </g>
+            <g class="hub-tiles">
+              <g transform="translate(134 34)"><rect width="52" height="52" rx="14"/><text x="26" y="31">PM</text></g>
+              <g transform="translate(274 34)"><rect width="52" height="52" rx="14"/><text x="26" y="31">SES</text></g>
+              <g transform="translate(134 144)"><rect width="52" height="52" rx="14"/><text x="26" y="31">EI</text></g>
+              <g transform="translate(274 144)"><rect width="52" height="52" rx="14"/><text x="26" y="31">SMTP</text></g>
+              <g transform="translate(134 254)"><rect width="52" height="52" rx="14"/><text x="26" y="31">TS</text></g>
+              <g transform="translate(274 254)"><rect width="52" height="52" rx="14"/><text x="26" y="31">JSON</text></g>
+              <g transform="translate(674 34)"><rect width="52" height="52" rx="14"/><text x="26" y="31">VPS</text></g>
+              <g transform="translate(814 34)"><rect width="52" height="52" rx="14"/><text x="26" y="31">ENH</text></g>
+              <g transform="translate(814 144)"><rect width="52" height="52" rx="14"/><text x="26" y="31">DKR</text></g>
+              <g transform="translate(674 254)"><rect width="52" height="52" rx="14"/><text x="26" y="31">EDGE</text></g>
+              <g transform="translate(814 254)"><rect width="52" height="52" rx="14"/><text x="26" y="31">NODE</text></g>
+            </g>
+            <circle cx="500" cy="170" r="70" class="hub-halo"/>
+            <circle cx="500" cy="170" r="56" class="hub-halo2"/>
+            <rect x="454" y="124" width="92" height="92" rx="24" class="hub-core"/>
+            <g transform="translate(480 154)" fill="none" stroke="#92d5b0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="0" width="40" height="30" rx="6"/><path d="M2 5 20 17 38 5"/></g>
+          </svg>
+        </div>
+
+        <div class="trio">
+          <article class="feat">
+            <div class="feat-mock">
+              <div class="codebox"><button type="button" class="copy" data-copy="c-enh">Kopiëren</button>
+<pre class="mock-term" id="c-enh">npm ci
+npm run build:node
+# Enhance → Node.js-app
+# start: dist/node.js</pre></div>
+            </div>
+            <h3>Enhance</h3>
+            <p>Node.js-app op je subdomein, met de proxy van Enhance ervoor.</p>
+          </article>
+          <article class="feat">
+            <div class="feat-mock">
+              <div class="codebox"><button type="button" class="copy" data-copy="c-dkr">Kopiëren</button>
+<pre class="mock-term" id="c-dkr">cp forms.example.json forms.json
+cp .env.example .env
+docker compose up -d --build</pre></div>
+            </div>
+            <h3>Docker</h3>
+            <p>Op elke VPS, ook een Gcore-VM. Luistert op 127.0.0.1.</p>
+          </article>
+          <article class="feat">
+            <div class="feat-mock">
+              <div class="codebox"><button type="button" class="copy" data-copy="c-bny">Kopiëren</button>
+<pre class="mock-term" id="c-bny">npm run build:bunny
+# deploy dist/bunny.js
+# config in HYF_CONFIG</pre></div>
+            </div>
+            <h3>Bunny Edge</h3>
+            <p>Standalone Edge Script. Alleen de HTTP-providers.</p>
+          </article>
+        </div>
+
+        <div class="config">
+          <div class="config-head">
+            <div><h3>forms.json</h3><p>Kies je provider en zie de config die erbij hoort.</p></div>
+            <div class="seg" role="group" aria-label="Kies een provider">
+              <button type="button" data-provider="postmark" aria-pressed="true">Postmark</button>
+              <button type="button" data-provider="ses" aria-pressed="false">SES</button>
+              <button type="button" data-provider="emailit" aria-pressed="false">Emailit</button>
+              <button type="button" data-provider="smtp" aria-pressed="false">SMTP</button>
+            </div>
+          </div>
+          <div class="codebox"><button type="button" class="copy" data-copy="code-config">Kopiëren</button>
+<pre class="config-code"><code id="code-config"></code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 07 Vergelijking (dark) ============ -->
+    <section class="section section-forest" id="vergelijking">
+      <div class="wrap">
+        <div class="head head-center">
+          <p class="chip chip-dark"><span class="chip-n">07</span>Vergelijking</p>
+          <h2>Kies hoe je formulieren verstuurt.</h2>
+          <p class="sub">Drie manieren om een formulier op een statische site te laten werken.</p>
+        </div>
+        <div class="plans">
+          <article class="plan">
+            <p class="plan-name">Gehoste formulierdienst</p>
+            <p class="plan-big">Snel</p>
+            <p class="plan-desc">Embed of endpoint van een externe dienst.</p>
+            <ul>
+              <li class="x">Mail vanaf hun domein</li>
+              <li class="x">Inzendingen via een extra partij</li>
+              <li class="x">Limieten van hun abonnement</li>
+              <li>Niets te beheren</li>
+            </ul>
+          </article>
+          <article class="plan plan-featured">
+            <div class="plan-row"><p class="plan-name">HostYourForms</p><span class="plan-badge">Aanrader</span></div>
+            <p class="plan-big">Eigen regie</p>
+            <p class="plan-desc">Je eigen server, je eigen mailprovider.</p>
+            <a class="btn btn-dark btn-block" href="#hosting">Installeren</a>
+            <ul>
+              <li>Mail vanaf jouw domein, met jouw DKIM</li>
+              <li>Geen tussenpartij, geen opslag</li>
+              <li>Limieten van je eigen provider</li>
+              <li>Spam- en relaybescherming ingebouwd</li>
+            </ul>
+          </article>
+          <article class="plan">
+            <p class="plan-name">Zelf bouwen</p>
+            <p class="plan-big">Maatwerk</p>
+            <p class="plan-desc">Een eigen script of serverless functie.</p>
+            <ul>
+              <li>Volledige controle</li>
+              <li class="x">Spamfilter zelf bouwen</li>
+              <li class="x">Header-injectie zelf afvangen</li>
+              <li class="x">Per provider zelf koppelen</li>
+            </ul>
+          </article>
+        </div>
+        <p class="plans-foot"><span>✓ Geen account nodig</span><span>✓ Je eigen API-keys</span><span>✓ Open source, AGPL-3.0</span></p>
+      </div>
+    </section>
+
+    <!-- ============ 08 Hosted (wachtlijst) ============ -->
+    <section class="section section-tint" id="hosted">
+      <div class="wrap hosted">
+        <div class="hosted-copy">
+          <p class="chip"><span class="chip-n">08</span>Hosted · in voorbereiding</p>
+          <h2 class="h2-left">Liever niets installeren?</h2>
+          <p class="sub sub-left">We werken aan een hosted versie. Je koppelt je eigen mailprovider in een dashboard en krijgt meteen een formulieradres. Het versturen blijft via jouw provider, vanaf jouw domein.</p>
+          <ul class="hosted-list">
+            <li><span class="hosted-ico" aria-hidden="true">1</span><div><b>Koppel je provider</b><span>Postmark, Amazon SES of Emailit, met een key die alleen mag versturen.</span></div></li>
+            <li><span class="hosted-ico" aria-hidden="true">2</span><div><b>Maak formulieren in het dashboard</b><span>Ontvangers, toegestane websites en spamcontroles, zonder configbestand.</span></div></li>
+            <li><span class="hosted-ico" aria-hidden="true">3</span><div><b>Plak het adres in je formulier</b><span>Dezelfde motor als de open source versie, gehost in de EU.</span></div></li>
+          </ul>
+          <p class="hosted-note">Zelf hosten blijft altijd mogelijk en gratis onder AGPL-3.0.</p>
+        </div>
+
+        <!-- De action wijst naar je eigen HostYourForms-endpoint; zie "Productsite" in de README. -->
+        <form class="optin" action="https://forms.example.com/f/wachtlijst" method="POST" data-optin novalidate>
+          <div class="optin-head">
+            <span class="tag tag-mint">Wachtlijst</span>
+            <h3>Hoor het als eerste.</h3>
+            <p>Je krijgt één mail zodra de hosted versie opengaat voor de eerste gebruikers.</p>
+          </div>
+          <label class="field">
+            <span>E-mailadres</span>
+            <input type="email" name="email" autocomplete="email" required placeholder="jij@jouwdomein.nl">
+          </label>
+          <label class="field">
+            <span>Welke provider gebruik je? <em>optioneel</em></span>
+            <select name="provider">
+              <option value="">Kies een provider</option>
+              <option>Postmark</option>
+              <option>Amazon SES</option>
+              <option>Emailit</option>
+              <option>SMTP</option>
+              <option>Nog geen</option>
+            </select>
+          </label>
+          <label class="check">
+            <input type="checkbox" name="toestemming" value="ja" required>
+            <span>Ik wil een mail ontvangen over de hosted versie. Je adres wordt nergens anders voor gebruikt en je kunt je altijd afmelden.</span>
+          </label>
+          <input class="hp" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn btn-dark btn-block" type="submit">Zet me op de wachtlijst</button>
+          <p class="optin-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ 08 Vragen ============ -->
+    <section class="section section-white" id="vragen">
+      <div class="wrap faq-grid">
+        <div class="faq-side">
+          <p class="chip"><span class="chip-n">09</span>FAQ</p>
+          <h2 class="h2-left">Vragen, beantwoord.</h2>
+          <div class="help">
+            <h3>Nog een vraag?</h3>
+            <p>De README in de repository beschrijft elke optie, met voorbeelden voor elke provider.</p>
+            <a class="btn btn-dark btn-sm" href="#hosting">Naar installeren</a>
+          </div>
+        </div>
+        <div class="faq">
+          <details open>
+            <summary>Heb ik JavaScript nodig op mijn website?</summary>
+            <p>Nee. Een gewoon HTML-formulier werkt, en de bezoeker gaat daarna naar je bedankpagina. Wil je op de pagina blijven, dan gebruik je <code>fetch</code> en krijg je JSON terug.</p>
+          </details>
+          <details>
+            <summary>Kan ik meerdere websites en formulieren gebruiken?</summary>
+            <p>Ja. Elk formulier krijgt een eigen adres, zoals <code>/f/contact</code> of <code>/f/vacature</code>, met eigen ontvangers, provider en toegestane websites.</p>
+          </details>
+          <details>
+            <summary>Worden inzendingen opgeslagen?</summary>
+            <p>Nee. HostYourForms controleert de inzending en geeft die door aan je mailprovider. Er staat niets in een database.</p>
+          </details>
+          <details>
+            <summary>Wat als mijn provider een fout geeft?</summary>
+            <p>De bezoeker krijgt een duidelijke melding of gaat naar je foutpagina met de code <code>send_failed</code>. De fout van de provider staat in je logs.</p>
+          </details>
+          <details>
+            <summary>Moet het van-adres op mijn eigen domein staan?</summary>
+            <p>Ja. Je provider verstuurt alleen vanaf domeinen die je daar hebt geverifieerd. Daardoor komen je mails ook goed aan.</p>
+          </details>
+          <details>
+            <summary>Is HostYourForms open source?</summary>
+            <p>Ja, onder de AGPL-3.0. Je mag het gratis gebruiken, aanpassen en zelf hosten. Bied je een aangepaste versie aan als dienst voor anderen, dan deel je ook die broncode.</p>
+          </details>
+          <details>
+            <summary>Wat is het verschil met de hosted versie?</summary>
+            <p>Het is dezelfde motor. Bij de hosted versie draaien wij de server en beheer je formulieren in een dashboard. Je mail gaat nog steeds via je eigen provider. Die versie is nog in voorbereiding.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="section section-tint section-cta">
+      <div class="wrap">
+        <div class="cta">
+          <svg class="cta-lines" viewBox="0 0 1200 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+            <path id="cl1" d="M-20 150 C 300 60, 700 220, 1220 90"/>
+            <path id="cl2" d="M-20 190 C 400 120, 800 240, 1220 150"/>
+            <text><textPath href="#cl1" startOffset="4%">naam=Sanne ✓ origin ok ✓ honeypot leeg ✓ turnstile ✓ dkim=pass ✓ 303 → /bedankt ✓ naam=Tom ✓ origin ok</textPath></text>
+            <text><textPath href="#cl2" startOffset="10%">offerte · bakkerij jansen ✓ verstuurd via Postmark ✓ vacature · cv.pdf ✓ verstuurd via SES ✓ contact</textPath></text>
+          </svg>
+          <p class="chip chip-dark"><span class="chip-n">10</span>Klaar als jij het bent</p>
+          <h2>Zet je eerste formulier vandaag live.</h2>
+          <p class="cta-sub">Eén configbestand, je bestaande API-key en een subdomein.</p>
+          <div class="ctas">
+            <a class="btn btn-white" href="#hosting">Installeren</a>
+            <a class="btn btn-outline" href="#hoe">Hoe het werkt</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer section-tint">
+    <div class="wrap">
+      <div class="foot-top">
+        <div class="foot-brand">
+          <a class="brand" href="#top">
+            <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7.5 12 13.5 21 7.5" fill="none" stroke="#2f8f62" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>HostYourForms</span>
+          </a>
+          <p>Formulieren voor statische websites, verstuurd via je eigen mailprovider.</p>
+        </div>
+        <div class="foot-cols">
+          <div><p class="foot-h">Product</p><a href="#functies">Functies</a><a href="#providers">Providers</a><a href="#veilig">Veiligheid</a></div>
+          <div><p class="foot-h">Hosting</p><a href="#hosting">Enhance</a><a href="#hosting">Docker</a><a href="#hosting">Bunny Edge</a></div>
+          <div><p class="foot-h">Meer</p><a href="#vergelijking">Vergelijking</a><a href="#hosted">Hosted (wachtlijst)</a><a href="#vragen">FAQ</a></div>
+        </div>
+      </div>
+      <div class="foot-bar">
+        <span class="status"><span class="live"></span>GET /health <b>{"ok":true}</b></span>
+        <span class="muted">HostYourForms · Open source onder AGPL-3.0</span>
+      </div>
+      <p class="wordmark" aria-hidden="true">HostYourForms</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

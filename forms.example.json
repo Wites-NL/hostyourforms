@@ -1,0 +1,59 @@
+{
+  "clientIpHeader": "x-forwarded-for",
+  "providers": {
+    "postmark": {
+      "type": "postmark",
+      "token": "${POSTMARK_TOKEN}",
+      "messageStream": "outbound"
+    },
+    "ses": {
+      "type": "ses",
+      "region": "eu-west-1",
+      "accessKeyId": "${AWS_ACCESS_KEY_ID}",
+      "secretAccessKey": "${AWS_SECRET_ACCESS_KEY}"
+    },
+    "emailit": {
+      "type": "emailit",
+      "apiKey": "${EMAILIT_API_KEY}"
+    },
+    "smtp": {
+      "type": "smtp",
+      "host": "smtp.example.com",
+      "port": 587,
+      "user": "${SMTP_USER}",
+      "pass": "${SMTP_PASS}"
+    }
+  },
+  "forms": {
+    "contact": {
+      "provider": "postmark",
+      "from": "Website <formulier@example.com>",
+      "to": "info@example.com",
+      "subject": "Nieuw bericht van {{name}}",
+      "replyToField": "email",
+      "allowedOrigins": ["https://example.com", "https://www.example.com"],
+      "redirect": "https://example.com/bedankt",
+      "errorRedirect": "https://example.com/contact-fout",
+      "requiredFields": ["name", "email", "message"],
+      "turnstile": { "secret": "${TURNSTILE_SECRET}" },
+      "rateLimit": { "max": 5, "windowSeconds": 600 },
+      "autoresponse": {
+        "subject": "Bedankt voor je bericht, {{name}}",
+        "text": "Hoi {{name}},\n\nBedankt voor je bericht. We reageren zo snel mogelijk.\n\nGroet,\nHet team"
+      }
+    },
+    "vacature": {
+      "provider": "ses",
+      "from": "Website <formulier@example.com>",
+      "to": ["hr@example.com"],
+      "subject": "Sollicitatie: {{name}}",
+      "allowedOrigins": ["https://example.com"],
+      "requiredFields": ["name", "email"],
+      "attachments": {
+        "maxFiles": 2,
+        "maxFileSize": 5242880,
+        "allowedTypes": ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+      }
+    }
+  }
+}

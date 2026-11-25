@@ -25,6 +25,20 @@ const emailitSchema = z.object({
   baseUrl: z.url().optional(),
 });
 
+const simpleMailServiceSchema = z.object({
+  type: z.literal("simplemailservice"),
+  apiKey: z.string().min(1),
+  accountId: z.string().min(1),
+  baseUrl: z.url().optional(),
+  tracking: z.boolean().default(false),
+  retention: z
+    .object({
+      metadata: z.number().int().min(1).max(30).optional(),
+      data: z.number().int().min(0).max(30).optional(),
+    })
+    .optional(),
+});
+
 const smtpSchema = z.object({
   type: z.literal("smtp"),
   host: z.string().min(1),
@@ -39,6 +53,7 @@ export const providerSchema = z.discriminatedUnion("type", [
   postmarkSchema,
   sesSchema,
   emailitSchema,
+  simpleMailServiceSchema,
   smtpSchema,
 ]);
 

@@ -1,7 +1,7 @@
 # HostYourForms
 
 Formulier-backend voor statische websites die verstuurt via **je eigen e-mailprovider**:
-Postmark, Amazon SES, Emailit of gewoon SMTP. Geen extra SaaS die je mail
+Postmark, Amazon SES, Emailit, Simple Mail Service (Cyso) of gewoon SMTP. Geen extra SaaS die je mail
 verstuurt vanaf hún domein: je gebruikt je eigen geverifieerde domein, SPF/DKIM
 en reputatie.
 
@@ -32,7 +32,27 @@ en reputatie.
 | `postmark` | Node, Bunny        | Server API token (`messageStream` optioneel)          |
 | `ses`      | Node, Bunny        | IAM-key met alleen `ses:SendEmail`, regio             |
 | `emailit`  | Node, Bunny        | API-key (sending)                                     |
+| `simplemailservice` | Node, Bunny | API-key v2 en account-ID                       |
 | `smtp`     | alleen Node/Docker | host, poort, gebruiker, wachtwoord                    |
+
+### Simple Mail Service (Cyso)
+
+```json
+"simplemailservice": {
+  "type": "simplemailservice",
+  "apiKey": "${SMS_API_KEY}",
+  "accountId": "${SMS_ACCOUNT_ID}"
+}
+```
+
+- Maak in het dashboard een credential van het type *API Key v2* met de scope
+  `messages:send:{jouwdomein}`, dan kan de key alleen vanaf dat domein versturen.
+- De API kent geen cc/bcc: elk adres in `to`, `cc` en `bcc` krijgt een eigen bericht.
+- Open- en kliktracking staan standaard uit (`"tracking": true` zet ze aan).
+  Met `"retention": { "metadata": 7, "data": 0 }` bepaal je hoe lang Cyso
+  gegevens en inhoud bewaart.
+- Liever SMTP? Gebruik dan `type: "smtp"` met host `send.simplemailservice.eu`,
+  poort 587 (STARTTLS).
 
 Een nieuwe provider is één bestand in `src/providers/` dat `send(mail)` implementeert.
 

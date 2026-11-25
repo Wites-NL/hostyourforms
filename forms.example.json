@@ -16,6 +16,11 @@
       "type": "emailit",
       "apiKey": "${EMAILIT_API_KEY}"
     },
+    "simplemailservice": {
+      "type": "simplemailservice",
+      "apiKey": "${SMS_API_KEY}",
+      "accountId": "${SMS_ACCOUNT_ID}"
+    },
     "smtp": {
       "type": "smtp",
       "host": "smtp.example.com",

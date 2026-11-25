@@ -5,6 +5,7 @@ import { buildMime, encodeAddress } from "../src/providers/mime.js";
 import { postmarkProvider } from "../src/providers/postmark.js";
 import { sesProvider } from "../src/providers/ses.js";
 import { signV4 } from "../src/providers/sigv4.js";
+import { parseAddress, simpleMailServiceProvider } from "../src/providers/simplemailservice.js";
 
 const mail: Mail = {
   from: "Website <forms@example.com>",
@@ -89,6 +90,46 @@ describe("providers", () => {
     const body = JSON.parse(call.init.body as string);
     expect(body).toMatchObject({ from: mail.from, to: mail.to, reply_to: mail.replyTo, subject: mail.subject });
     expect(body.attachments[0]).toEqual({ filename: "a.pdf", content: "AQID", content_type: "application/pdf" });
+  });
+
+  it("simplemailservice sends the expected payload", async () => {
+    const { fn, calls } = captureFetch(
+      new Response(JSON.stringify({ object: "list", data: [{ object: "message", status: "queued" }] }), { status: 202 }),
+    );
+    await simpleMailServiceProvider({ apiKey: "smseu-sk-x", accountId: "acc-1", fetch: fn }).send({
+      ...mail,
+      to: ["Info <info@example.com>"],
+      cc: ["info@example.com", "sales@example.com"],
+    });
+    const call = calls[0]!;
+    expect(call.url).toBe("https://api.simplemailservice.eu/v2/accounts/acc-1/messages");
+    expect((call.init.headers as Record<string, string>)["Authorization"]).toBe("Bearer smseu-sk-x");
+    const body = JSON.parse(call.init.body as string);
+    expect(body).toMatchObject({
+      from: { email: "forms@example.com", name: "Website" },
+      recipients: [{ email: "info@example.com", name: "Info" }, { email: "sales@example.com" }],
+      reply_to: { email: "bezoeker@example.org" },
+      subject: mail.subject,
+      text_content: "Hallo",
+      html_content: "<p>Hallo</p>",
+      tracking: { open: false, click: false },
+    });
+    expect(body.attachments[0]).toEqual({ file_name: "a.pdf", content_type: "application/pdf", data: "AQID", base64: true });
+  });
+
+  it("simplemailservice fails on per-recipient errors and HTTP errors", async () => {
+    const partial = captureFetch(
+      new Response(JSON.stringify({ data: [{ status: "error", error: "suppressed", recipient: { email: "info@example.com" } }] }), { status: 202 }),
+    );
+    await expect(simpleMailServiceProvider({ apiKey: "k", accountId: "a", fetch: partial.fn }).send(mail)).rejects.toThrow(/suppressed/);
+    const denied = captureFetch(new Response(JSON.stringify({ message: "invalid API key" }), { status: 401 }));
+    await expect(simpleMailServiceProvider({ apiKey: "k", accountId: "a", fetch: denied.fn }).send(mail)).rejects.toThrow(/401/);
+  });
+
+  it("parses display-name addresses", () => {
+    expect(parseAddress("Website <forms@example.com>")).toEqual({ name: "Website", email: "forms@example.com" });
+    expect(parseAddress('"Bakker, Jan" <jan@example.com>')).toEqual({ name: "Bakker, Jan", email: "jan@example.com" });
+    expect(parseAddress("info@example.com")).toEqual({ email: "info@example.com" });
   });
 
   it("ses signs a raw SendEmail request", async () => {

@@ -4,6 +4,7 @@ import type { MailProvider } from "../mail.js";
 import { emailitProvider } from "./emailit.js";
 import { postmarkProvider } from "./postmark.js";
 import { sesProvider } from "./ses.js";
+import { simpleMailServiceProvider } from "./simplemailservice.js";
 
 type Factory<T extends ProviderConfig["type"]> = (cfg: Extract<ProviderConfig, { type: T }>) => MailProvider;
 export type ProviderFactories = { [T in ProviderConfig["type"]]?: Factory<T> };
@@ -13,6 +14,7 @@ export const httpProviders: ProviderFactories = {
   postmark: (c) => postmarkProvider(c),
   emailit: (c) => emailitProvider(c),
   ses: (c) => sesProvider(c),
+  simplemailservice: (c) => simpleMailServiceProvider(c),
 };
 
 export function buildProviders(config: Config, factories: ProviderFactories): Record<string, MailProvider> {

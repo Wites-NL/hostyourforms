@@ -5,7 +5,7 @@
   "type": "module",
   "license": "AGPL-3.0-only",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.12"
   },
   "scripts": {
     "dev": "tsx watch src/entry/node.ts",
@@ -13,6 +13,7 @@
     "build:node": "esbuild src/entry/node.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=dist/node.js",
     "build:bunny": "esbuild src/entry/bunny.ts --bundle --platform=neutral --format=esm --target=es2022 --main-fields=module,main --conditions=bunny,deno,worker,import --external:node:* --minify --outfile=dist/bunny.js",
     "start": "node dist/node.js",
+    "start:deploy": "npm ci --include=dev --no-audit --no-fund && npm run build:node && node dist/node.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

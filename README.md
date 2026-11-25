@@ -116,27 +116,29 @@ Enhance draait Node.js-apps per website en zet er zelf een proxy voor.
 
 1. Maak `forms.jouwdomein.nl` aan als **eigen website**, niet als alias van je
    hoofdsite: Enhance proxyt alleen het primaire domein van een website.
-2. `git clone` dit project in de home-map van die site, bijvoorbeeld in `hostyourforms/`,
-   en draai `npm ci && npm run build:node`.
-3. Zet daar `forms.json` neer, en een `.env` met je poort en secrets
-   (zie `.env.example`), bijvoorbeeld:
+2. Maak in de home-map van die site een map **`hostyourforms-config`** met daarin
+   `forms.json` en `.env` (of `hyf.env` als je bestandsbeheer geen bestanden met
+   een punt toont). Die map staat los van de deploy, dus een nieuwe deploy laat
+   hem staan. Voorbeeld `.env`:
    ```
    PORT=3010
    HOST=127.0.0.1
    SMS_API_KEY=...
+   SMS_ACCOUNT_ID=...
    ```
-   Daarna `chmod 600 .env forms.json`.
-4. In Enhance: Websites → je site → *Advanced* → *Node.js* → *Deploy app*:
+   Zet de rechten op alleen lezen/schrijven voor de eigenaar (`chmod 600`).
+3. In Enhance: Websites → je site → *Advanced* → *Node.js* → *Deploy app*:
    - Mode: **Automatic** (Enhance start de app en herstart hem als hij stopt)
    - Proxy: **aan**, pad `/`, poort gelijk aan `PORT` in je `.env`
-   - Working directory: `hostyourforms` (relatief aan je home-map)
-   - Startup command: `node --env-file=.env dist/node.js`
-   - Node-versie: 22 (minimaal 20.6 voor `--env-file`)
-5. Laat `"clientIpHeader": "x-forwarded-for"` staan, anders ziet de rate limiter
+   - Startup command: `npm run start:deploy` (installeert, bouwt en start)
+   - Node-versie: 22 (minimaal 20.12)
+4. Laat `"clientIpHeader": "x-forwarded-for"` staan, anders ziet de rate limiter
    alleen het IP van de proxy.
-6. Na een update (`git pull && npm run build:node`) herstart je de app door de
-   mode op Manual en weer op Automatic te zetten. De log staat in je home-map
-   (`persistent_app_<ID>.log`).
+
+De app zoekt `.env`/`hyf.env` en `forms.json` in deze volgorde: `HYF_CONFIG_DIR`,
+de map waarin de app start, en `~/hostyourforms-config`. In de log
+(`persistent_app_<ID>.log` in je home-map) staat welke bestanden hij gebruikt.
+Herstarten doe je door de mode op Manual en weer op Automatic te zetten.
 
 ### VPS met Docker (ook Gcore Cloud/VM)
 

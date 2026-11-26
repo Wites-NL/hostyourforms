@@ -248,3 +248,43 @@ describe("createFormsApp", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("onSendFailed", () => {
+  async function failing(queue: boolean | "throw") {
+    const { createFormsApp } = await import("../src/app.js");
+    const config = loadConfig(
+      { providers: { main: { type: "postmark", token: "x" } }, forms: { contact: { provider: "main", from: "f@example.com", to: "info@example.com" } } },
+      {},
+    );
+    const events: { status: string; code?: string }[] = [];
+    const stored: Mail[] = [];
+    const app = createFormsApp({
+      resolve: () => ({ form: config.forms.contact!, provider: { type: "down", send: async () => { throw new Error("provider down"); } } }),
+      maxBodySize: 1_000_000,
+      log: () => {},
+      onResult: (e) => void events.push(e),
+      onSendFailed: async ({ mail }) => {
+        if (queue === "throw") throw new Error("db down");
+        stored.push(mail);
+        return queue;
+      },
+    });
+    const res = await app.request("/f/contact", { method: "POST", body: new URLSearchParams({ email: "a@b.nl", message: "hoi" }), headers: { accept: "application/json" } });
+    return { res, events, stored };
+  }
+
+  it("a queued mail looks like success to the visitor", async () => {
+    const { res, events, stored } = await failing(true);
+    expect(res.status).toBe(200);
+    expect(events).toEqual([expect.objectContaining({ status: "queued", code: "send_failed" })]);
+    expect(stored[0]!.text).toContain("hoi");
+  });
+
+  it("falls back to send_failed when the hook declines or throws", async () => {
+    for (const q of [false, "throw"] as const) {
+      const { res, events } = await failing(q);
+      expect(res.status).toBe(502);
+      expect(events.map((e) => e.status)).toEqual(["failed"]);
+    }
+  });
+});

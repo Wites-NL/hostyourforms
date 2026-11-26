@@ -29,7 +29,8 @@ export interface ResolvedForm {
 /** Outcome of one submission, e.g. for a submission log. Contains no field values. */
 export interface SubmissionEvent {
   formId: string;
-  status: "delivered" | "spam" | "rejected" | "failed";
+  /** "queued": sending failed, but onSendFailed stored the mail for a later retry. */
+  status: "delivered" | "queued" | "spam" | "rejected" | "failed";
   /** Error code for rejected/failed submissions, e.g. "rate_limited" or "send_failed". */
   code?: string;
   /** Provider error detail for failed submissions. */
@@ -50,6 +51,12 @@ export interface FormsAppOptions {
   log?: LogFn;
   /** Called after every submission. Errors thrown here are logged, never shown to the visitor. */
   onResult?: (event: SubmissionEvent) => void | Promise<void>;
+  /**
+   * Called when the notification mail could not be sent. Return true when the mail
+   * was stored for a later retry: the visitor then sees success and the event status
+   * is "queued". Return false (or throw) to answer with send_failed as usual.
+   */
+  onSendFailed?: (event: { formId: string; mail: Mail; error: unknown }) => boolean | Promise<boolean>;
 }
 
 const defaultLog: NonNullable<AppDeps["log"]> = (level, msg, data) => {
@@ -280,16 +287,33 @@ export function createFormsApp(opts: FormsAppOptions) {
             attachments,
           };
 
+          let queued = false;
           try {
             await provider.send(mail);
           } catch (err) {
             log("error", "sending notification failed", { form: formId, provider: provider.type, error: String(err) });
-            await report({ formId, status: "failed", code: "send_failed", error: String(err).slice(0, 500) });
-            throw new SubmissionError("send_failed", 502, "Het bericht kon niet worden verstuurd, probeer het later opnieuw");
+            if (opts.onSendFailed) {
+              try {
+                queued = await opts.onSendFailed({ formId, mail, error: err });
+              } catch (hookErr) {
+                log("error", "onSendFailed hook failed", { form: formId, error: String(hookErr) });
+              }
+            }
+            const error = String(err).slice(0, 500);
+            if (!queued) {
+              await report({ formId, status: "failed", code: "send_failed", error });
+              throw new SubmissionError("send_failed", 502, "Het bericht kon niet worden verstuurd, probeer het later opnieuw");
+            }
+            log("warn", "notification queued for retry", { form: formId });
+            await report({ formId, status: "queued", code: "send_failed", error, attachments: attachments.length, newsletter: subscribed });
           }
-          log("info", "submission delivered", { form: formId, provider: provider.type, attachments: attachments.length });
+          if (!queued) {
+            log("info", "submission delivered", { form: formId, provider: provider.type, attachments: attachments.length });
+            await report({ formId, status: "delivered", attachments: attachments.length, newsletter: subscribed });
+          }
+        } else {
+          await report({ formId, status: "delivered", attachments: attachments.length, newsletter: subscribed });
         }
-        await report({ formId, status: "delivered", attachments: attachments.length, newsletter: subscribed });
 
         if (form.autoresponse && replyTo) {
           const vars = { ...sub.fields, _form: formId };

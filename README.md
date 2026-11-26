@@ -21,6 +21,7 @@ en reputatie.
 - Redirect na verzenden (`redirect` / `_redirect`) of JSON-antwoord bij `Accept: application/json`
 - Reply-To wordt het adres van de bezoeker, zodat je direct kunt antwoorden
 - Optionele automatische bevestiging naar de bezoeker
+- Inschrijfformulieren voor je nieuwsbrief: Emailit, Laposta, Plunk, Brevo, Mailchimp, ActiveCampaign of MailerLite
 - Spambescherming: honeypot, captcha (Turnstile, hCaptcha, reCAPTCHA, Friendly Captcha of ALTCHA), rate limiting per IP, allowlist van origins
 - Geen open relay: ontvangers staan vast in de config en komen nooit uit het formulier
 - Header-injectie wordt afgevangen (geen newlines in onderwerp/Reply-To)
@@ -140,12 +141,54 @@ De oude notatie `"turnstile": { "secret": "..." }` werkt nog.
 adres dat de bezoeker invult. Zonder captcha kan iemand zo via jouw domein
 willekeurige mensen mailen, en dat kost je je reputatie.
 
+### Nieuwsbrief
+
+Met `newsletter` zet een formulier de bezoeker op je mailinglijst. Laat je `to`
+weg, dan komt er geen notificatiemail en is het een puur inschrijfformulier:
+
+```jsonc
+"nieuwsbrief": {                                // endpoint: POST /f/nieuwsbrief
+  "provider": "simplemailservice",               // alleen nodig voor autoresponse
+  "from": "Website <formulier@jouwdomein.nl>",
+  "allowedOrigins": ["https://jouwdomein.nl"],
+  "requiredFields": ["email"],
+  "redirect": "https://jouwdomein.nl/bedankt-inschrijving",
+  "newsletter": {
+    "type": "emailit",
+    "apiKey": "${EMAILIT_API_KEY}",
+    "audienceId": "aud_...",
+    "doubleOptIn": true,
+    "emailField": "email",                       // standaard "email"
+    "nameField": "naam",                         // komt in het naamveld van de dienst
+    "fields": { "bedrijf": "company" }           // formulierveld → veld bij de dienst
+  }
+}
+```
+
+Op een contactformulier kan inschrijven optioneel: met `"consentField": "nieuwsbrief"`
+wordt de bezoeker alleen ingeschreven als dat veld (bijvoorbeeld een checkbox) is aangevinkt.
+Wie zich twee keer inschrijft, krijgt geen foutmelding.
+
+| type             | Instellingen                                        | Naamveld        | Double opt-in |
+| ---------------- | --------------------------------------------------- | --------------- | ------------- |
+| `emailit`        | `apiKey`, `audienceId`                              | `first_name`    | `"doubleOptIn": true` (ook aanzetten bij de audience) |
+| `laposta`        | `apiKey`, `listId`                                  | via `fields`, bv. `{ "naam": "voornaam" }` | instelling van de lijst in Laposta |
+| `plunk`          | `apiKey` (secret key `sk_…`)                        | `data.firstName` | niet beschikbaar |
+| `brevo`          | `apiKey`, `listId`                                  | `FIRSTNAME`     | `"doubleOptIn": { "templateId": 3, "redirectUrl": "https://…" }` |
+| `mailchimp`      | `apiKey` (met datacenter, bv. `…-us21`), `listId`   | `FNAME`         | `"doubleOptIn": true` |
+| `activecampaign` | `apiUrl` (`https://jouwaccount.api-us1.com`), `apiKey`, `listId` | `firstName` | instelling van de lijst in ActiveCampaign |
+| `mailerlite`     | `apiKey`, optioneel `groupId`                       | `name`          | accountinstelling "double opt-in for API" |
+
+Bij double opt-in ziet de bezoeker "bevestig je inschrijving via de mail" en geeft
+de JSON-modus `{ "ok": true, "newsletter": "pending" }` terug.
+
 ### Foutcodes (JSON-modus)
 
 `unknown_form` 404 · `origin_not_allowed` 403 · `rate_limited` 429 · `captcha_failed` 400 ·
 `missing_fields` 422 · `field_too_long` 422 · `attachments_not_allowed` 422 ·
 `file_type_not_allowed` 422 · `too_many_files` 422 · `file_too_large` 413 ·
-`body_too_large` 413 · `unsupported_content_type` 415 · `send_failed` 502
+`body_too_large` 413 · `unsupported_content_type` 415 · `invalid_email` 400 ·
+`send_failed` 502 · `subscribe_failed` 502
 
 ## Deployen
 

@@ -47,6 +47,21 @@
         "text": "Hoi {{name}},\n\nBedankt voor je bericht. We reageren zo snel mogelijk.\n\nGroet,\nHet team"
       }
     },
+    "nieuwsbrief": {
+      "provider": "emailit",
+      "from": "Website <formulier@example.com>",
+      "allowedOrigins": ["https://example.com", "https://www.example.com"],
+      "redirect": "https://example.com/bedankt-inschrijving",
+      "requiredFields": ["email"],
+      "rateLimit": { "max": 3, "windowSeconds": 600 },
+      "newsletter": {
+        "type": "emailit",
+        "apiKey": "${EMAILIT_API_KEY}",
+        "audienceId": "${EMAILIT_AUDIENCE_ID}",
+        "nameField": "naam",
+        "doubleOptIn": true
+      }
+    },
     "vacature": {
       "provider": "ses",
       "from": "Website <formulier@example.com>",

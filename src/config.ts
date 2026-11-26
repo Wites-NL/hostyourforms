@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { newsletterSchema } from "./newsletter.js";
 
 const emailList = z
   .union([z.string().min(1), z.array(z.string().min(1)).min(1)])
@@ -96,7 +97,8 @@ const captchaSchema = z.discriminatedUnion("provider", [
 const formObject = z.object({
   provider: z.string().min(1),
   from: z.string().min(1),
-  to: emailList,
+  /** Who gets the notification mail. Optional for newsletter forms. */
+  to: emailList.optional(),
   cc: emailList.optional(),
   bcc: emailList.optional(),
   /** Supports {{field}} placeholders, e.g. "Nieuw bericht van {{name}}". */
@@ -120,6 +122,8 @@ const formObject = z.object({
     })
     .default({ max: 5, windowSeconds: 600 }),
   attachments: attachmentsSchema.optional(),
+  /** Add the submitter to a newsletter list (Emailit, Laposta, Plunk, Brevo, Mailchimp, …). */
+  newsletter: newsletterSchema.optional(),
   autoresponse: z
     .object({
       from: z.string().optional(),
@@ -153,6 +157,16 @@ export const configSchema = z
           code: "custom",
           path: ["forms", id, "provider"],
           message: `unknown provider "${form.provider}"`,
+        });
+      }
+      if (!form.to?.length && !form.newsletter) {
+        ctx.addIssue({ code: "custom", path: ["forms", id, "to"], message: "set \"to\" (notification mail), \"newsletter\", or both" });
+      }
+      if (form.newsletter?.type === "laposta" && form.newsletter.nameField) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["forms", id, "newsletter", "nameField"],
+          message: 'Laposta has no built-in name field; map it via "fields", e.g. { "name": "voornaam" }',
         });
       }
       // An autoresponse mails whatever address a visitor types in. Without a

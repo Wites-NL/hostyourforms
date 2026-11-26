@@ -3,6 +3,7 @@ import { bodyLimit } from "hono/body-limit";
 import type { Config, FormConfig } from "./config.js";
 import { isValidEmail, type Mail, type MailProvider, sanitizeHeader } from "./mail.js";
 import { escapeHtml, interpolate, renderNotification, renderSubject } from "./render.js";
+import { NewsletterError, subscribe, subscriberFrom, type SubscribeResult } from "./newsletter.js";
 import { createAltchaChallenge, ReplayGuard, verifyCaptcha } from "./captcha.js";
 import { originAllowed, RateLimiter, requestOrigin } from "./spam.js";
 import { collectAttachments, parseSubmission, SubmissionError, validateFields } from "./submission.js";
@@ -34,6 +35,8 @@ export interface SubmissionEvent {
   /** Provider error detail for failed submissions. */
   error?: string;
   attachments?: number;
+  /** Newsletter outcome, when the form has a newsletter and the visitor opted in. */
+  newsletter?: SubscribeResult;
 }
 
 export interface FormsAppOptions {
@@ -214,10 +217,17 @@ export function createFormsApp(opts: FormsAppOptions) {
 
         const sub = await parseSubmission(c.req.raw);
         const redirect = redirectTarget(form, sub.fields["_redirect"], origin);
+        let subscribed: SubscribeResult | undefined;
         const succeed = () => {
-          if (wantsJson(c.req.raw)) return c.json({ ok: true });
+          if (wantsJson(c.req.raw)) return c.json(subscribed ? { ok: true, newsletter: subscribed } : { ok: true });
           if (redirect) return c.redirect(redirect, 303);
-          return c.html(page("Bedankt!", "Je bericht is verstuurd.", c.req.header("referer")));
+          const message =
+            subscribed === "pending"
+              ? "Bijna klaar: bevestig je inschrijving via de link in de mail die je zo ontvangt."
+              : subscribed && !form.to?.length
+                ? "Je bent ingeschreven voor de nieuwsbrief."
+                : "Je bericht is verstuurd.";
+          return c.html(page("Bedankt!", message, c.req.header("referer")));
         };
 
         if (sub.fields[form.honeypotField]?.trim()) {
@@ -238,28 +248,48 @@ export function createFormsApp(opts: FormsAppOptions) {
         const submitter = sub.fields[form.replyToField]?.trim();
         const replyTo = submitter && isValidEmail(submitter) ? submitter : undefined;
 
-        const body = renderNotification(form, formId, sub, { origin, receivedAt: new Date(opts.now?.() ?? Date.now()) });
-        const mail: Mail = {
-          from: form.from,
-          to: form.to,
-          cc: form.cc,
-          bcc: form.bcc,
-          replyTo,
-          subject: renderSubject(form, formId, sub),
-          text: body.text,
-          html: body.html,
-          attachments,
-        };
-
-        try {
-          await provider.send(mail);
-        } catch (err) {
-          log("error", "sending notification failed", { form: formId, provider: provider.type, error: String(err) });
-          await report({ formId, status: "failed", code: "send_failed", error: String(err).slice(0, 500) });
-          throw new SubmissionError("send_failed", 502, "Het bericht kon niet worden verstuurd, probeer het later opnieuw");
+        // Newsletter first: when it fails the visitor can simply try again,
+        // without the site owner getting a notification for every attempt.
+        const subscriber = form.newsletter && subscriberFrom(form.newsletter, sub.fields);
+        if (form.newsletter && subscriber) {
+          if (!isValidEmail(subscriber.email)) {
+            throw new SubmissionError("invalid_email", 400, "Vul een geldig e-mailadres in");
+          }
+          try {
+            subscribed = await subscribe(form.newsletter, { ...subscriber, ip, sourceUrl: c.req.header("referer") }, doFetch);
+          } catch (err) {
+            const detail = err instanceof NewsletterError ? err.message : String(err);
+            log("error", "newsletter subscribe failed", { form: formId, service: form.newsletter.type, error: detail });
+            await report({ formId, status: "failed", code: "subscribe_failed", error: detail.slice(0, 500) });
+            throw new SubmissionError("subscribe_failed", 502, "Inschrijven lukte niet, probeer het later opnieuw");
+          }
+          log("info", "newsletter subscribe", { form: formId, service: form.newsletter.type, result: subscribed });
         }
-        log("info", "submission delivered", { form: formId, provider: provider.type, attachments: attachments.length });
-        await report({ formId, status: "delivered", attachments: attachments.length });
+
+        if (form.to?.length) {
+          const body = renderNotification(form, formId, sub, { origin, receivedAt: new Date(opts.now?.() ?? Date.now()) });
+          const mail: Mail = {
+            from: form.from,
+            to: form.to,
+            cc: form.cc,
+            bcc: form.bcc,
+            replyTo,
+            subject: renderSubject(form, formId, sub),
+            text: body.text,
+            html: body.html,
+            attachments,
+          };
+
+          try {
+            await provider.send(mail);
+          } catch (err) {
+            log("error", "sending notification failed", { form: formId, provider: provider.type, error: String(err) });
+            await report({ formId, status: "failed", code: "send_failed", error: String(err).slice(0, 500) });
+            throw new SubmissionError("send_failed", 502, "Het bericht kon niet worden verstuurd, probeer het later opnieuw");
+          }
+          log("info", "submission delivered", { form: formId, provider: provider.type, attachments: attachments.length });
+        }
+        await report({ formId, status: "delivered", attachments: attachments.length, newsletter: subscribed });
 
         if (form.autoresponse && replyTo) {
           const vars = { ...sub.fields, _form: formId };

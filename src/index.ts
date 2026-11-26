@@ -11,3 +11,5 @@ export { renderNotification, renderSubject } from "./render.js";
 export { captchaFields, captchaSnippet, createAltchaChallenge, verifyCaptcha } from "./captcha.js";
 export type { CaptchaConfig } from "./captcha.js";
 export type { Submission } from "./submission.js";
+export { NewsletterError, newsletterSchema, subscribe, subscriberFrom } from "./newsletter.js";
+export type { NewsletterConfig, SubscribeResult, Subscriber } from "./newsletter.js";

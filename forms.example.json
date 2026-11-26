@@ -40,7 +40,7 @@
       "redirect": "https://example.com/bedankt",
       "errorRedirect": "https://example.com/contact-fout",
       "requiredFields": ["name", "email", "message"],
-      "turnstile": { "secret": "${TURNSTILE_SECRET}" },
+      "captcha": { "provider": "turnstile", "secret": "${TURNSTILE_SECRET}" },
       "rateLimit": { "max": 5, "windowSeconds": 600 },
       "autoresponse": {
         "subject": "Bedankt voor je bericht, {{name}}",

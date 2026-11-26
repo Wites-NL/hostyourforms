@@ -179,7 +179,7 @@ describe("config", () => {
         },
         {},
       ),
-    ).toThrow(/turnstile/);
+    ).toThrow(/captcha/);
   });
 
   it("rejects unknown providers", () => {

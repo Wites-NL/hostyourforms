@@ -67,7 +67,33 @@ const attachmentsSchema = z.object({
   allowedTypes: z.array(z.string()).default(["image/*", "application/pdf"]),
 });
 
-export const formSchema = z.object({
+const captchaSchema = z.discriminatedUnion("provider", [
+  z.object({ provider: z.literal("turnstile"), secret: z.string().min(1), siteKey: z.string().optional() }),
+  z.object({ provider: z.literal("hcaptcha"), secret: z.string().min(1), siteKey: z.string().optional() }),
+  z.object({
+    provider: z.literal("recaptcha"),
+    secret: z.string().min(1),
+    siteKey: z.string().optional(),
+    /** reCAPTCHA v3: minimum score (0.0 = bot, 1.0 = human). Default 0.5. */
+    minScore: z.number().min(0).max(1).optional(),
+    action: z.string().optional(),
+  }),
+  z.object({
+    provider: z.literal("friendlycaptcha"),
+    apiKey: z.string().min(1),
+    siteKey: z.string().optional(),
+    endpoint: z.url().optional(),
+  }),
+  z.object({
+    provider: z.literal("altcha"),
+    /** Secret for signing challenges. Long and random, e.g. 32+ characters. */
+    hmacKey: z.string().min(16),
+    maxNumber: z.number().int().min(1000).max(10_000_000).optional(),
+    expiresSeconds: z.number().int().min(30).max(3600).optional(),
+  }),
+]);
+
+const formObject = z.object({
   provider: z.string().min(1),
   from: z.string().min(1),
   to: emailList,
@@ -84,6 +110,8 @@ export const formSchema = z.object({
   requiredFields: z.array(z.string()).default([]),
   honeypotField: z.string().default("_gotcha"),
   maxFieldLength: z.number().int().positive().default(10_000),
+  captcha: captchaSchema.optional(),
+  /** Older shorthand for { captcha: { provider: "turnstile", secret } }. */
   turnstile: z.object({ secret: z.string().min(1) }).optional(),
   rateLimit: z
     .object({
@@ -101,6 +129,10 @@ export const formSchema = z.object({
     })
     .optional(),
 });
+
+export const formSchema = formObject.transform((f) =>
+  f.captcha || !f.turnstile ? f : { ...f, captcha: { provider: "turnstile" as const, secret: f.turnstile.secret } },
+);
 
 export const configSchema = z
   .object({
@@ -125,11 +157,11 @@ export const configSchema = z
       }
       // An autoresponse mails whatever address a visitor types in. Without a
       // captcha that turns the form into a way to spam strangers from your domain.
-      if (form.autoresponse && !form.turnstile) {
+      if (form.autoresponse && !form.captcha) {
         ctx.addIssue({
           code: "custom",
           path: ["forms", id, "autoresponse"],
-          message: "autoresponse requires turnstile to be configured",
+          message: "autoresponse requires a captcha (turnstile, hcaptcha, recaptcha, friendlycaptcha or altcha)",
         });
       }
     }

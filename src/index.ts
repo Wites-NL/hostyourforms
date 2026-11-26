@@ -8,4 +8,6 @@ export type { Attachment, Mail, MailProvider } from "./mail.js";
 export { buildProvider, buildProviders, httpProviders } from "./providers/index.js";
 export type { ProviderFactories } from "./providers/index.js";
 export { renderNotification, renderSubject } from "./render.js";
+export { captchaFields, captchaSnippet, createAltchaChallenge, verifyCaptcha } from "./captcha.js";
+export type { CaptchaConfig } from "./captcha.js";
 export type { Submission } from "./submission.js";

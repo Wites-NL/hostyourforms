@@ -21,7 +21,7 @@ en reputatie.
 - Redirect na verzenden (`redirect` / `_redirect`) of JSON-antwoord bij `Accept: application/json`
 - Reply-To wordt het adres van de bezoeker, zodat je direct kunt antwoorden
 - Optionele automatische bevestiging naar de bezoeker
-- Spambescherming: honeypot, Cloudflare Turnstile, rate limiting per IP, allowlist van origins
+- Spambescherming: honeypot, captcha (Turnstile, hCaptcha, reCAPTCHA, Friendly Captcha of ALTCHA), rate limiting per IP, allowlist van origins
 - Geen open relay: ontvangers staan vast in de config en komen nooit uit het formulier
 - Header-injectie wordt afgevangen (geen newlines in onderwerp/Reply-To)
 
@@ -81,12 +81,12 @@ Geheimen zet je in environment variables en verwijs je aan als `${NAAM}`.
       "honeypotField": "_gotcha",
       "maxFieldLength": 10000,
       "rateLimit": { "max": 5, "windowSeconds": 600 },
-      "turnstile": { "secret": "${TURNSTILE_SECRET}" },
+      "captcha": { "provider": "turnstile", "secret": "${TURNSTILE_SECRET}" },
       "attachments": {                           // weglaten = geen bestanden toegestaan
         "maxFiles": 3, "maxFileSize": 5242880, "maxTotalSize": 10485760,
         "allowedTypes": ["image/*", "application/pdf"]
       },
-      "autoresponse": {                          // vereist turnstile
+      "autoresponse": {                          // vereist een captcha
         "subject": "Bedankt, {{name}}",
         "text": "We hebben je bericht ontvangen."
       }
@@ -97,7 +97,46 @@ Geheimen zet je in environment variables en verwijs je aan als `${NAAM}`.
 
 Velden die met `_` beginnen (en captcha-tokens) komen niet in de e-mail.
 
-**Waarom vereist een autoresponse Turnstile?** Een autoresponse mailt naar het
+### Captcha
+
+Per formulier één `captcha`. Zet de widget van de provider in je HTML-formulier;
+HostYourForms controleert het antwoord voordat er iets wordt verstuurd.
+
+| `provider` | Instellingen | Widget-veld | Herkomst |
+|---|---|---|---|
+| `turnstile` | `secret` | `cf-turnstile-response` | Cloudflare (VS) |
+| `hcaptcha` | `secret`, `siteKey` (aanbevolen) | `h-captcha-response` | VS |
+| `recaptcha` | `secret`, `minScore` (v3, standaard 0.5), `action` | `g-recaptcha-response` | Google (VS) |
+| `friendlycaptcha` | `apiKey`, `siteKey` | `frc-captcha-response` | Duitsland (EU) |
+| `altcha` | `hmacKey` (lang en willekeurig) | `altcha` | zelf gehost, geen derde partij |
+
+**ALTCHA** draait volledig op je eigen server: de widget haalt een rekenpuzzel op
+bij `GET /f/<formulier>/altcha`, lost die in de browser op, en de server rekent
+het antwoord na. Er gaat niets naar een externe partij en er zijn geen cookies.
+Elk antwoord werkt één keer en verloopt na 10 minuten.
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/altcha@3.7.0/dist/main/altcha.min.js" async defer></script>
+<form action="https://forms.jouwdomein.nl/f/contact" method="POST">
+  …
+  <altcha-widget challenge="https://forms.jouwdomein.nl/f/contact/altcha"></altcha-widget>
+  <button>Versturen</button>
+</form>
+```
+
+```json
+"captcha": { "provider": "altcha", "hmacKey": "${ALTCHA_HMAC_KEY}" }
+```
+
+Maak een sleutel met `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+
+Kan een provider niet worden bereikt, dan wordt de inzending geweigerd. Alleen
+bij Friendly Captcha wordt hij dan doorgelaten, zoals hun documentatie aanraadt,
+zodat een storing bij hen je formulieren niet blokkeert.
+
+De oude notatie `"turnstile": { "secret": "..." }` werkt nog.
+
+**Waarom vereist een autoresponse een captcha?** Een autoresponse mailt naar het
 adres dat de bezoeker invult. Zonder captcha kan iemand zo via jouw domein
 willekeurige mensen mailen, en dat kost je je reputatie.
 

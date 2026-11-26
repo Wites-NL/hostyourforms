@@ -1,3 +1,4 @@
+import { allCaptchaFields } from "./captcha.js";
 import type { FormConfig } from "./config.js";
 import type { Attachment } from "./mail.js";
 
@@ -74,9 +75,8 @@ export function isInternalField(name: string, form: FormConfig): boolean {
   return (
     name.startsWith("_") ||
     name === form.honeypotField ||
-    name === "cf-turnstile-response" ||
-    name === "g-recaptcha-response" ||
-    name === "h-captcha-response"
+    allCaptchaFields.has(name) ||
+    name === "frc-captcha-solution"
   );
 }
 

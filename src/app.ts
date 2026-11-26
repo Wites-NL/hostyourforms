@@ -3,7 +3,8 @@ import { bodyLimit } from "hono/body-limit";
 import type { Config, FormConfig } from "./config.js";
 import { isValidEmail, type Mail, type MailProvider, sanitizeHeader } from "./mail.js";
 import { escapeHtml, interpolate, renderNotification, renderSubject } from "./render.js";
-import { originAllowed, RateLimiter, requestOrigin, verifyTurnstile } from "./spam.js";
+import { createAltchaChallenge, ReplayGuard, verifyCaptcha } from "./captcha.js";
+import { originAllowed, RateLimiter, requestOrigin } from "./spam.js";
 import { collectAttachments, parseSubmission, SubmissionError, validateFields } from "./submission.js";
 
 type LogFn = (level: "info" | "warn" | "error", msg: string, data?: Record<string, unknown>) => void;
@@ -92,6 +93,7 @@ export function createApp(config: Config, deps: AppDeps) {
 export function createFormsApp(opts: FormsAppOptions) {
   const app = new Hono();
   const limiter = new RateLimiter(opts.now);
+  const replay = new ReplayGuard(opts.now);
   const log = opts.log ?? defaultLog;
   const doFetch = opts.fetch ?? fetch;
 
@@ -161,6 +163,20 @@ export function createFormsApp(opts: FormsAppOptions) {
     return c.body(null, 204);
   });
 
+  // ALTCHA: the widget fetches a fresh proof-of-work challenge here.
+  app.get("/f/:formId/altcha", async (c) => {
+    const resolved = await opts.resolve(c.req.param("formId"));
+    const captcha = resolved?.form.captcha;
+    if (!resolved || captcha?.provider !== "altcha") return c.json({ ok: false, error: "not_found" }, 404);
+    corsHeaders(c, resolved.form);
+    const ip = clientIp(c);
+    if (limiter.hit(`altcha:${c.req.param("formId")}:${ip ?? "unknown"}`, 60, 600) > 0) {
+      return c.json({ ok: false, error: "rate_limited" }, 429);
+    }
+    c.header("Cache-Control", "no-store");
+    return c.json(await createAltchaChallenge(captcha, opts.now));
+  });
+
   app.get("/f/:formId", (c) =>
     c.text("Dit endpoint accepteert alleen POST-verzoeken vanuit een formulier.", 405, { Allow: "POST" }),
   );
@@ -211,8 +227,8 @@ export function createFormsApp(opts: FormsAppOptions) {
           return succeed();
         }
 
-        if (form.turnstile) {
-          const ok = await verifyTurnstile(form.turnstile.secret, sub.fields["cf-turnstile-response"], ip, doFetch);
+        if (form.captcha) {
+          const ok = await verifyCaptcha(form.captcha, sub.fields, { ip, fetch: doFetch, now: opts.now, replay, log });
           if (!ok) throw new SubmissionError("captcha_failed", 400, "Captcha-controle mislukt, probeer het opnieuw");
         }
 

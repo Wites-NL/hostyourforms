@@ -188,3 +188,63 @@ describe("config", () => {
     ).toThrow(/unknown provider/);
   });
 });
+
+describe("createFormsApp", () => {
+  async function build() {
+    const { createFormsApp } = await import("../src/app.js");
+    const { formSchema } = await import("../src/config.js");
+    const sent: Mail[] = [];
+    const events: unknown[] = [];
+    const provider: MailProvider = { type: "fake", send: async (m) => void sent.push(m) };
+    const form = formSchema.parse({
+      provider: "db",
+      from: "forms@example.com",
+      to: "info@example.com",
+      allowedOrigins: ["https://example.com"],
+      requiredFields: ["email"],
+    });
+    const app = createFormsApp({
+      resolve: async (id) => (id === "abc123" ? { form, provider } : undefined),
+      maxBodySize: 1024 * 1024,
+      log: () => {},
+      onResult: (e) => void events.push(e),
+    });
+    const send = (id: string, fields: Record<string, string>) =>
+      app.request(`/f/${id}`, {
+        method: "POST",
+        body: new URLSearchParams(fields),
+        headers: { origin: "https://example.com", accept: "application/json" },
+      });
+    return { send, sent, events };
+  }
+
+  it("resolves forms per request and reports each outcome without field values", async () => {
+    const { send, sent, events } = await build();
+    expect((await send("abc123", { email: "a@example.org", message: "hoi" })).status).toBe(200);
+    expect((await send("abc123", { message: "geen email" })).status).toBe(422);
+    expect((await send("abc123", { email: "a@example.org", _gotcha: "bot" })).status).toBe(200);
+    expect((await send("onbekend", { email: "a@example.org" })).status).toBe(404);
+    expect(sent).toHaveLength(1);
+    expect(events).toEqual([
+      { formId: "abc123", status: "delivered", attachments: 0 },
+      { formId: "abc123", status: "rejected", code: "missing_fields" },
+      { formId: "abc123", status: "spam", code: "honeypot" },
+    ]);
+  });
+
+  it("keeps answering when the onResult hook throws", async () => {
+    const { createFormsApp } = await import("../src/app.js");
+    const { formSchema } = await import("../src/config.js");
+    const form = formSchema.parse({ provider: "db", from: "f@example.com", to: "i@example.com" });
+    const app = createFormsApp({
+      resolve: () => ({ form, provider: { type: "fake", send: async () => {} } }),
+      maxBodySize: 1024,
+      log: () => {},
+      onResult: () => {
+        throw new Error("db down");
+      },
+    });
+    const res = await app.request("/f/x", { method: "POST", body: new URLSearchParams({ a: "b" }), headers: { accept: "application/json" } });
+    expect(res.status).toBe(200);
+  });
+});

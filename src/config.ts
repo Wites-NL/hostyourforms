@@ -67,7 +67,7 @@ const attachmentsSchema = z.object({
   allowedTypes: z.array(z.string()).default(["image/*", "application/pdf"]),
 });
 
-const formSchema = z.object({
+export const formSchema = z.object({
   provider: z.string().min(1),
   from: z.string().min(1),
   to: emailList,

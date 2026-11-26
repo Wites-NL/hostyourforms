@@ -6,13 +6,46 @@ import { escapeHtml, interpolate, renderNotification, renderSubject } from "./re
 import { originAllowed, RateLimiter, requestOrigin, verifyTurnstile } from "./spam.js";
 import { collectAttachments, parseSubmission, SubmissionError, validateFields } from "./submission.js";
 
+type LogFn = (level: "info" | "warn" | "error", msg: string, data?: Record<string, unknown>) => void;
+
 export interface AppDeps {
   providers: Record<string, MailProvider>;
   /** Client IP from the socket, used when no clientIpHeader is configured. */
   connectionIp?: (c: Context) => string | undefined;
   fetch?: typeof fetch;
   now?: () => number;
-  log?: (level: "info" | "warn" | "error", msg: string, data?: Record<string, unknown>) => void;
+  log?: LogFn;
+  onResult?: (event: SubmissionEvent) => void | Promise<void>;
+}
+
+/** A form ready to receive submissions: its settings plus the provider that sends for it. */
+export interface ResolvedForm {
+  form: FormConfig;
+  provider: MailProvider;
+}
+
+/** Outcome of one submission, e.g. for a submission log. Contains no field values. */
+export interface SubmissionEvent {
+  formId: string;
+  status: "delivered" | "spam" | "rejected" | "failed";
+  /** Error code for rejected/failed submissions, e.g. "rate_limited" or "send_failed". */
+  code?: string;
+  /** Provider error detail for failed submissions. */
+  error?: string;
+  attachments?: number;
+}
+
+export interface FormsAppOptions {
+  /** Look up a form by its public id. Return undefined for unknown forms. */
+  resolve: (formId: string) => ResolvedForm | undefined | Promise<ResolvedForm | undefined>;
+  clientIpHeader?: string;
+  maxBodySize: number;
+  connectionIp?: (c: Context) => string | undefined;
+  fetch?: typeof fetch;
+  now?: () => number;
+  log?: LogFn;
+  /** Called after every submission. Errors thrown here are logged, never shown to the visitor. */
+  onResult?: (event: SubmissionEvent) => void | Promise<void>;
 }
 
 const defaultLog: NonNullable<AppDeps["log"]> = (level, msg, data) => {
@@ -35,19 +68,49 @@ function page(title: string, message: string, backUrl?: string): string {
 </head><body><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p>${back}</body></html>`;
 }
 
+/** Self-hosted app: forms and providers come from a config file. */
 export function createApp(config: Config, deps: AppDeps) {
+  return createFormsApp({
+    resolve: (formId) => {
+      const form = Object.hasOwn(config.forms, formId) ? config.forms[formId] : undefined;
+      if (!form) return undefined;
+      const provider = deps.providers[form.provider];
+      if (!provider) throw new Error(`provider ${form.provider} not initialised`);
+      return { form, provider };
+    },
+    clientIpHeader: config.clientIpHeader,
+    maxBodySize: config.maxBodySize,
+    connectionIp: deps.connectionIp,
+    fetch: deps.fetch,
+    now: deps.now,
+    log: deps.log,
+    onResult: deps.onResult,
+  });
+}
+
+/** Form endpoint where forms are looked up per request, e.g. from a database. */
+export function createFormsApp(opts: FormsAppOptions) {
   const app = new Hono();
-  const limiter = new RateLimiter(deps.now);
-  const log = deps.log ?? defaultLog;
-  const doFetch = deps.fetch ?? fetch;
+  const limiter = new RateLimiter(opts.now);
+  const log = opts.log ?? defaultLog;
+  const doFetch = opts.fetch ?? fetch;
+
+  const report = async (event: SubmissionEvent) => {
+    if (!opts.onResult) return;
+    try {
+      await opts.onResult(event);
+    } catch (err) {
+      log("warn", "onResult hook failed", { form: event.formId, error: String(err) });
+    }
+  };
 
   const clientIp = (c: Context): string | undefined => {
-    if (config.clientIpHeader) {
-      const raw = c.req.header(config.clientIpHeader);
+    if (opts.clientIpHeader) {
+      const raw = c.req.header(opts.clientIpHeader);
       const last = raw?.split(",").at(-1)?.trim();
       if (last) return last;
     }
-    return deps.connectionIp?.(c);
+    return opts.connectionIp?.(c);
   };
 
   const corsHeaders = (c: Context, form: FormConfig) => {
@@ -88,10 +151,10 @@ export function createApp(config: Config, deps: AppDeps) {
 
   app.get("/health", (c) => c.json({ ok: true }));
 
-  app.options("/f/:formId", (c) => {
-    const form = config.forms[c.req.param("formId")];
-    if (!form) return c.body(null, 404);
-    corsHeaders(c, form);
+  app.options("/f/:formId", async (c) => {
+    const resolved = await opts.resolve(c.req.param("formId"));
+    if (!resolved) return c.body(null, 404);
+    corsHeaders(c, resolved.form);
     c.header("Access-Control-Allow-Methods", "POST, OPTIONS");
     c.header("Access-Control-Allow-Headers", "Content-Type, Accept");
     c.header("Access-Control-Max-Age", "86400");
@@ -105,14 +168,18 @@ export function createApp(config: Config, deps: AppDeps) {
   app.post(
     "/f/:formId",
     bodyLimit({
-      maxSize: config.maxBodySize,
-      onError: (c) =>
-        fail(c, config.forms[c.req.param("formId") ?? ""], new SubmissionError("body_too_large", 413, "Inzending is te groot")),
+      maxSize: opts.maxBodySize,
+      onError: async (c) => {
+        const resolved = await opts.resolve(c.req.param("formId") ?? "");
+        if (resolved) await report({ formId: c.req.param("formId") ?? "", status: "rejected", code: "body_too_large" });
+        return fail(c, resolved?.form, new SubmissionError("body_too_large", 413, "Inzending is te groot"));
+      },
     }),
     async (c) => {
       const formId = c.req.param("formId");
-      const form = config.forms[formId];
-      if (!form) return fail(c, undefined, new SubmissionError("unknown_form", 404, "Onbekend formulier"));
+      const resolved = await opts.resolve(formId);
+      if (!resolved) return fail(c, undefined, new SubmissionError("unknown_form", 404, "Onbekend formulier"));
+      const { form, provider } = resolved;
       corsHeaders(c, form);
 
       const origin = requestOrigin(c.req.raw.headers);
@@ -140,6 +207,7 @@ export function createApp(config: Config, deps: AppDeps) {
         if (sub.fields[form.honeypotField]?.trim()) {
           // Look successful so bots learn nothing.
           log("info", "honeypot triggered, submission dropped", { form: formId, ip });
+          await report({ formId, status: "spam", code: "honeypot" });
           return succeed();
         }
 
@@ -154,10 +222,7 @@ export function createApp(config: Config, deps: AppDeps) {
         const submitter = sub.fields[form.replyToField]?.trim();
         const replyTo = submitter && isValidEmail(submitter) ? submitter : undefined;
 
-        const provider = deps.providers[form.provider];
-        if (!provider) throw new Error(`provider ${form.provider} not initialised`);
-
-        const body = renderNotification(form, formId, sub, { origin, receivedAt: new Date(deps.now?.() ?? Date.now()) });
+        const body = renderNotification(form, formId, sub, { origin, receivedAt: new Date(opts.now?.() ?? Date.now()) });
         const mail: Mail = {
           from: form.from,
           to: form.to,
@@ -174,9 +239,11 @@ export function createApp(config: Config, deps: AppDeps) {
           await provider.send(mail);
         } catch (err) {
           log("error", "sending notification failed", { form: formId, provider: provider.type, error: String(err) });
+          await report({ formId, status: "failed", code: "send_failed", error: String(err).slice(0, 500) });
           throw new SubmissionError("send_failed", 502, "Het bericht kon niet worden verstuurd, probeer het later opnieuw");
         }
         log("info", "submission delivered", { form: formId, provider: provider.type, attachments: attachments.length });
+        await report({ formId, status: "delivered", attachments: attachments.length });
 
         if (form.autoresponse && replyTo) {
           const vars = { ...sub.fields, _form: formId };
@@ -196,10 +263,14 @@ export function createApp(config: Config, deps: AppDeps) {
         return succeed();
       } catch (err) {
         if (err instanceof SubmissionError) {
-          if (err.status < 500) log("info", "submission rejected", { form: formId, code: err.code, ip });
+          if (err.status < 500) {
+            log("info", "submission rejected", { form: formId, code: err.code, ip });
+            await report({ formId, status: "rejected", code: err.code });
+          }
           return fail(c, form, err);
         }
         log("error", "unexpected error", { form: formId, error: String(err) });
+        await report({ formId, status: "failed", code: "internal_error", error: String(err).slice(0, 500) });
         return fail(c, form, new SubmissionError("internal_error", 500, "Er ging iets mis aan onze kant"));
       }
     },

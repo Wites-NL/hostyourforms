@@ -17,6 +17,13 @@ export const httpProviders: ProviderFactories = {
   simplemailservice: (c) => simpleMailServiceProvider(c),
 };
 
+/** Build one provider from its config, e.g. credentials loaded from a database. */
+export function buildProvider(cfg: ProviderConfig, factories: ProviderFactories = httpProviders): MailProvider {
+  const factory = factories[cfg.type] as Factory<typeof cfg.type> | undefined;
+  if (!factory) throw new ConfigError(`provider type "${cfg.type}" is not supported on this runtime`);
+  return factory(cfg as never);
+}
+
 export function buildProviders(config: Config, factories: ProviderFactories): Record<string, MailProvider> {
   const out: Record<string, MailProvider> = {};
   for (const [name, cfg] of Object.entries(config.providers)) {

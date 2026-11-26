@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Form backend for static websites that sends through your own email provider (Postmark, Amazon SES, Emailit, SMTP).",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "license": "AGPL-3.0-only",
   "engines": {
     "node": ">=20.12"

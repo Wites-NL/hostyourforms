@@ -45,6 +45,9 @@ function readRawConfig(): unknown {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+// Log right away, so an empty log means the process never got here.
+console.log(`Starting HostYourForms (node ${process.version}, cwd ${process.cwd()})`);
+
 try {
   loadEnvFile();
   const config = loadConfig(readRawConfig(), process.env);
@@ -64,9 +67,11 @@ try {
   });
   server.on("error", (err) => {
     console.error(`Could not listen on ${hostname}:${port}: ${err.message}`);
-    process.exit(1);
+    process.exitCode = 1;
   });
 } catch (err) {
   console.error(err instanceof ConfigError || err instanceof SyntaxError ? `Config error: ${err.message}` : err);
-  process.exit(1);
+  // No process.exit(): it can drop output that is still being written to a pipe.
+  // Nothing keeps the event loop alive here, so the process ends by itself.
+  process.exitCode = 1;
 }

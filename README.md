@@ -122,7 +122,6 @@ Enhance draait Node.js-apps per website en zet er zelf een proxy voor.
    hem staan. Voorbeeld `.env`:
    ```
    PORT=3010
-   HOST=127.0.0.1
    SMS_API_KEY=...
    SMS_ACCOUNT_ID=...
    ```

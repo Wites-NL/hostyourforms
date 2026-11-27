@@ -13,6 +13,8 @@ export class SubmissionError extends Error {
     readonly status: number,
     message: string,
     readonly details?: unknown,
+    /** Extra reason for logs and the dashboard; never sent to the visitor. */
+    readonly reason?: string,
   ) {
     super(message);
     this.name = "SubmissionError";

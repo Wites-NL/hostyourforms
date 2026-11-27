@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { createFormsApp } from "../src/app.js";
-import { type CaptchaConfig, createAltchaChallenge, ReplayGuard, verifyCaptcha } from "../src/captcha.js";
+import { type CaptchaConfig, checkCaptcha, createAltchaChallenge, ReplayGuard, verifyCaptcha } from "../src/captcha.js";
 import { formSchema, loadConfig } from "../src/config.js";
 
 function fakeFetch(response: unknown, status = 200) {
@@ -32,6 +32,29 @@ describe("siteverify providers", () => {
       expect(await verifyCaptcha(cfg, {}, { fetch: ok.fn })).toBe(false);
     });
   }
+
+  it("reports the provider's error codes as the reason", async () => {
+    const cfg: CaptchaConfig = { provider: "hcaptcha", secret: "s", siteKey: "site" };
+    const f = fakeFetch({ success: false, "error-codes": ["invalid-input-secret", "sitekey-secret-mismatch"] });
+    expect(await checkCaptcha(cfg, { "h-captcha-response": "t" }, { fetch: f.fn })).toEqual({ ok: false, reason: "invalid-input-secret, sitekey-secret-mismatch" });
+    expect((await checkCaptcha(cfg, {}, { fetch: f.fn })).reason).toMatch(/h-captcha-response/);
+  });
+
+  it("shows the reason in the onResult event, not to the visitor", async () => {
+    const form = formSchema.parse({ provider: "p", from: "f@example.com", to: "i@example.com", captcha: { provider: "hcaptcha", secret: "s" } });
+    const events: { status: string; code?: string; error?: string }[] = [];
+    const app = createFormsApp({
+      resolve: () => ({ form, provider: { type: "x", send: async () => {} } }),
+      fetch: fakeFetch({ success: false, "error-codes": ["invalid-or-already-seen-response"] }).fn,
+      onResult: (e) => void events.push(e),
+      maxBodySize: 10_000,
+      log: () => {},
+    });
+    const res = await app.request("/f/c", { method: "POST", body: new URLSearchParams({ email: "a@b.test", "h-captcha-response": "t" }), headers: { accept: "application/json" } });
+    expect(res.status).toBe(400);
+    expect(await res.text()).not.toContain("already-seen");
+    expect(events).toMatchObject([{ status: "rejected", code: "captcha_failed", error: "invalid-or-already-seen-response" }]);
+  });
 
   it("hcaptcha sends the sitekey", async () => {
     const f = fakeFetch({ success: true });

@@ -30,32 +30,51 @@ export interface CaptchaContext {
   log?: (level: "warn", msg: string, data?: Record<string, unknown>) => void;
 }
 
+export interface CaptchaResult {
+  ok: boolean;
+  /** Why it failed, e.g. the provider's error codes. For logs and the site owner, not for visitors. */
+  reason?: string;
+}
+
 export async function verifyCaptcha(cfg: CaptchaConfig, fields: Record<string, string | undefined>, ctx: CaptchaContext = {}): Promise<boolean> {
+  return (await checkCaptcha(cfg, fields, ctx)).ok;
+}
+
+/** Like verifyCaptcha, but says why a captcha was rejected. */
+export async function checkCaptcha(cfg: CaptchaConfig, fields: Record<string, string | undefined>, ctx: CaptchaContext = {}): Promise<CaptchaResult> {
   const token = fields[captchaFields[cfg.provider]]?.trim();
-  if (!token) return false;
+  if (!token) return { ok: false, reason: `geen captcha-antwoord ontvangen (veld ${captchaFields[cfg.provider]} ontbreekt)` };
   const doFetch = ctx.fetch ?? fetch;
   try {
     switch (cfg.provider) {
       case "turnstile":
-        return (await siteverify(doFetch, "https://challenges.cloudflare.com/turnstile/v0/siteverify", cfg.secret, token, ctx.ip)).success === true;
+        return verdict(await siteverify(doFetch, "https://challenges.cloudflare.com/turnstile/v0/siteverify", cfg.secret, token, ctx.ip));
       case "hcaptcha":
-        return (await siteverify(doFetch, "https://api.hcaptcha.com/siteverify", cfg.secret, token, ctx.ip, cfg.siteKey)).success === true;
+        return verdict(await siteverify(doFetch, "https://api.hcaptcha.com/siteverify", cfg.secret, token, ctx.ip, cfg.siteKey));
       case "recaptcha": {
         const r = await siteverify(doFetch, "https://www.google.com/recaptcha/api/siteverify", cfg.secret, token, ctx.ip);
-        if (r.success !== true) return false;
+        if (r.success !== true) return verdict(r);
         // v3 returns a score; v2 does not.
-        if (typeof r.score === "number" && r.score < (cfg.minScore ?? 0.5)) return false;
-        if (cfg.action && r.action !== cfg.action) return false;
-        return true;
+        if (typeof r.score === "number" && r.score < (cfg.minScore ?? 0.5)) return { ok: false, reason: `score ${r.score} lager dan ${cfg.minScore ?? 0.5}` };
+        if (cfg.action && r.action !== cfg.action) return { ok: false, reason: `action "${r.action ?? ""}" is niet "${cfg.action}"` };
+        return { ok: true };
       }
       case "friendlycaptcha":
         return await verifyFriendly(doFetch, cfg, token, ctx);
       case "altcha":
-        return await verifyAltcha(cfg, token, ctx.now ?? Date.now, ctx.replay);
+        return (await verifyAltcha(cfg, token, ctx.now ?? Date.now, ctx.replay)) ? { ok: true } : { ok: false, reason: "ongeldig, verlopen of al gebruikt antwoord" };
     }
-  } catch {
-    return false;
+  } catch (err) {
+    return { ok: false, reason: `controle mislukt: ${String(err)}`.slice(0, 300) };
   }
+}
+
+type SiteverifyResponse = { success?: boolean; score?: number; action?: string; "error-codes"?: unknown; error?: unknown };
+
+function verdict(r: SiteverifyResponse): CaptchaResult {
+  if (r.success === true) return { ok: true };
+  const codes = Array.isArray(r["error-codes"]) ? r["error-codes"].map(String) : r.error ? [JSON.stringify(r.error)] : [];
+  return { ok: false, reason: codes.length ? codes.join(", ").slice(0, 300) : "geweigerd door de provider" };
 }
 
 async function siteverify(doFetch: typeof fetch, url: string, secret: string, token: string, ip?: string, siteKey?: string) {
@@ -63,7 +82,7 @@ async function siteverify(doFetch: typeof fetch, url: string, secret: string, to
   if (ip) body.set("remoteip", ip);
   if (siteKey) body.set("sitekey", siteKey);
   const res = await doFetch(url, { method: "POST", body });
-  return (await res.json()) as { success?: boolean; score?: number; action?: string };
+  return (await res.json()) as SiteverifyResponse;
 }
 
 /**
@@ -71,7 +90,7 @@ async function siteverify(doFetch: typeof fetch, url: string, secret: string, to
  * itself is unreachable (network error or 5xx), so an outage does not block forms.
  * Configuration errors (4xx) and invalid answers are always rejected.
  */
-async function verifyFriendly(doFetch: typeof fetch, cfg: Extract<CaptchaConfig, { provider: "friendlycaptcha" }>, token: string, ctx: CaptchaContext) {
+async function verifyFriendly(doFetch: typeof fetch, cfg: Extract<CaptchaConfig, { provider: "friendlycaptcha" }>, token: string, ctx: CaptchaContext): Promise<CaptchaResult> {
   let res: Response;
   try {
     res = await doFetch(cfg.endpoint ?? "https://global.frcapi.com/api/v2/captcha/siteverify", {
@@ -81,14 +100,15 @@ async function verifyFriendly(doFetch: typeof fetch, cfg: Extract<CaptchaConfig,
     });
   } catch (err) {
     ctx.log?.("warn", "friendly captcha unreachable, accepting submission", { error: String(err) });
-    return true;
+    return { ok: true };
   }
   if (res.status >= 500) {
     ctx.log?.("warn", "friendly captcha server error, accepting submission", { status: res.status });
-    return true;
+    return { ok: true };
   }
-  const data = (await res.json()) as { success?: boolean };
-  return res.ok && data.success === true;
+  const data = (await res.json()) as SiteverifyResponse;
+  if (res.ok && data.success === true) return { ok: true };
+  return { ok: false, reason: data.error ? JSON.stringify(data.error).slice(0, 300) : `HTTP ${res.status}` };
 }
 
 // ---------- ALTCHA (self-hosted proof of work, challenge format v1) ----------

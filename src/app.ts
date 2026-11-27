@@ -4,7 +4,7 @@ import type { Config, FormConfig } from "./config.js";
 import { isValidEmail, type Mail, type MailProvider, sanitizeHeader } from "./mail.js";
 import { escapeHtml, interpolate, renderNotification, renderSubject } from "./render.js";
 import { NewsletterError, subscribe, subscriberFrom, type SubscribeResult } from "./newsletter.js";
-import { createAltchaChallenge, ReplayGuard, verifyCaptcha } from "./captcha.js";
+import { checkCaptcha, createAltchaChallenge, ReplayGuard } from "./captcha.js";
 import { originAllowed, RateLimiter, requestOrigin } from "./spam.js";
 import { collectAttachments, parseSubmission, SubmissionError, validateFields } from "./submission.js";
 
@@ -245,8 +245,8 @@ export function createFormsApp(opts: FormsAppOptions) {
         }
 
         if (form.captcha) {
-          const ok = await verifyCaptcha(form.captcha, sub.fields, { ip, fetch: doFetch, now: opts.now, replay, log });
-          if (!ok) throw new SubmissionError("captcha_failed", 400, "Captcha-controle mislukt, probeer het opnieuw");
+          const result = await checkCaptcha(form.captcha, sub.fields, { ip, fetch: doFetch, now: opts.now, replay, log });
+          if (!result.ok) throw new SubmissionError("captcha_failed", 400, "Captcha-controle mislukt, probeer het opnieuw", undefined, result.reason);
         }
 
         validateFields(sub, form);
@@ -334,8 +334,8 @@ export function createFormsApp(opts: FormsAppOptions) {
       } catch (err) {
         if (err instanceof SubmissionError) {
           if (err.status < 500) {
-            log("info", "submission rejected", { form: formId, code: err.code, ip });
-            await report({ formId, status: "rejected", code: err.code });
+            log("info", "submission rejected", { form: formId, code: err.code, ip, ...(err.reason ? { reason: err.reason } : {}) });
+            await report({ formId, status: "rejected", code: err.code, ...(err.reason ? { error: err.reason } : {}) });
           }
           return fail(c, form, err);
         }
